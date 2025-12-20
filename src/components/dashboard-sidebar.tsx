@@ -156,8 +156,8 @@ export default function DashboardSidebar() {
              </SidebarMenuButton>
            </SidebarMenuItem>
            <SidebarMenuItem>
-             <SidebarMenuButton asChild tooltip="Configuración">
-               <Link href="#"><Settings /><span>Configuración</span></Link>
+             <SidebarMenuButton asChild tooltip="Configuración" isActive={isActive('/dashboard/settings')}>
+               <Link href="/dashboard/settings"><Settings /><span>Configuración</span></Link>
              </SidebarMenuButton>
            </SidebarMenuItem>
            <SidebarMenuItem>

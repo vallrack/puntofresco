@@ -14,6 +14,7 @@ import { useUser } from "@/firebase";
 import { getAuth, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 
 function UserMenu() {
@@ -53,7 +54,9 @@ function UserMenu() {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>{user?.displayName || user?.email}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>Configuración</DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/settings">Configuración</Link>
+        </DropdownMenuItem>
         <DropdownMenuItem>Soporte</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>Cerrar Sesión</DropdownMenuItem>

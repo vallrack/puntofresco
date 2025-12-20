@@ -81,9 +81,9 @@ type UserFormValues = z.infer<typeof userSchema>;
 type EditUserFormValues = z.infer<typeof editUserSchema>;
 
 export default function UsersPage() {
-  const { user: currentUser } = useUser();
+  const { user: currentUser, loading: loadingUser } = useUser();
   const { data: currentUserData } = useDoc<{ rol: string }>({ path: 'usuarios', id: currentUser?.uid });
-  const { data: users, loading, forceUpdate } = useCollection<AppUser>({ path: 'usuarios' });
+  const { data: users, loading: loadingUsers, forceUpdate } = useCollection<AppUser>({ path: 'usuarios' });
   const firestore = useFirestore();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -112,20 +112,22 @@ export default function UsersPage() {
   const isSuperAdmin = useMemo(() => currentUserData?.rol === 'super_admin', [currentUserData]);
 
   const filteredUsers = useMemo(() => {
-    return users?.filter((user) =>
+    if (!users) return [];
+    return users.filter((user) =>
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [users, searchTerm]);
   
-  const onNewUserSubmit = async (values: UserFormValues) => {
+ const onNewUserSubmit = async (values: UserFormValues) => {
     try {
       await createUser(values);
-      toast({ title: 'Éxito', description: 'Usuario creado y registrado correctamente.' });
+      toast({ title: 'Éxito', description: 'Usuario creado correctamente.' });
       forceUpdate();
       setIsNewUserDialogOpen(false);
       newUserForm.reset();
     } catch (error: any) {
+      console.error("Caught error in UI:", error.message);
       toast({
           variant: 'destructive',
           title: 'Error al crear usuario',
@@ -185,6 +187,12 @@ export default function UsersPage() {
     }
   }, [isEditUserDialogOpen, isDeleteUserDialogOpen]);
   
+  const loading = loadingUser || loadingUsers;
+  
+  if (loading) {
+    return <p>Cargando...</p>;
+  }
+
   if (!isSuperAdmin) {
     return (
        <Card>
@@ -269,9 +277,9 @@ export default function UsersPage() {
                       </TableCell>
                       {isSuperAdmin && (
                         <TableCell className="text-right">
-                          <DropdownMenu>
+                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0" disabled={user.rol === 'super_admin'}>
+                              <Button variant="ghost" className="h-8 w-8 p-0" disabled={user.id === currentUser?.uid}>
                                 <span className="sr-only">Abrir menú</span>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>

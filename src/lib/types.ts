@@ -9,4 +9,8 @@ export interface Product {
   sellingPrice: number;
   stock: number;
   minStock: number;
+  creadoPor?: string;
+  actualizadoPor?: string;
+  fechaCreacion?: any;
+  fechaActualizacion?: any;
 }

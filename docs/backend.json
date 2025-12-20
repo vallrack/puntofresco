@@ -37,6 +37,10 @@
         "nombre": {
           "type": "string"
         },
+        "sku": {
+          "type": "string",
+          "description": "SKU o código de barras del producto."
+        },
         "precio": {
           "type": "number"
         },
@@ -64,6 +68,7 @@
       },
       "required": [
         "nombre",
+        "sku",
         "precio",
         "stock"
       ]
@@ -83,7 +88,10 @@
           "description": "Fecha y hora de la venta."
         }
       },
-       "required": ["vendedorId", "fecha"]
+      "required": [
+        "vendedorId",
+        "fecha"
+      ]
     },
     "compra": {
       "title": "Compra",

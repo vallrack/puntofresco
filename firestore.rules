@@ -23,38 +23,51 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && (getRole() == 'admin' || getRole() == 'super_admin');
     }
+    
+    function isVendedor() {
+      return isAuthenticated() && getRole() == 'vendedor';
+    }
 
     // --- REGLAS POR COLECCIÓN ---
 
     // Colección de Usuarios: 
     // - Un usuario puede leer su propio perfil.
-    // - Solo un Admin o Super Admin pueden crear, actualizar o eliminar perfiles.
-    // - Hay una excepción para que el primer Super Admin pueda crear su propio perfil.
+    // - Solo un Admin o Super Admin pueden crear usuarios.
+    // - Solo un Super Admin puede actualizar o eliminar perfiles.
     match /usuarios/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow create: if isAdmin() || (request.auth.uid == userId && request.resource.data.rol == 'super_admin');
+      allow create: if isAdmin();
       allow update, delete: if isSuperAdmin();
     }
 
     // Colección de Productos e Inventario
     match /productos/{productoId} {
+      // Vendedores pueden leer para consultar stock
       allow read: if isAuthenticated();
-      // Solo Admins o Super Admins pueden modificar stock manual, precios o crear productos
+      // Solo Admins o Super Admins pueden modificar stock, precios o crear productos
       allow write: if isAdmin();
     }
 
     // Colección de Ventas
     match /ventas/{ventaId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated(); // Todos pueden vender
-      allow update, delete: if isAdmin(); // Solo cargos altos pueden anular o editar ventas
+      // Admins pueden ver todas las ventas
+      allow read: if isAdmin();
+      // Vendedores solo pueden ver sus propias ventas
+      allow read: if isVendedor() && resource.data.vendedorId == request.auth.uid;
+      // Cualquier usuario autenticado puede crear una venta
+      allow create: if isAuthenticated(); 
+      // Solo Admins pueden anular o editar ventas
+      allow update, delete: if isAdmin();
     }
 
     // Colección de Compras y Gastos
     match /compras/{compraId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
-    // Reportes Financieros (Ganancias, Pérdidas, Balances)
-    
+    // Reportes Financieros
+    match /reportes_financieros/{reporteId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

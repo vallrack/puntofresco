@@ -17,7 +17,7 @@
         "rol": {
           "type": "string",
           "description": "Rol del usuario en el sistema.",
-          "enum": ["super_admin", "admin", "empleado"]
+          "enum": ["super_admin", "admin", "vendedor"]
         }
       },
       "required": ["email", "rol"]
@@ -54,4 +54,43 @@
     "reporte_financiero": {
       "title": "Reporte Financiero",
       "description": "Representa un reporte financiero.",
-      "type":_
+      "type": "object",
+      "properties": {}
+    }
+  },
+  "auth": {
+    "providers": ["email"]
+  },
+  "firestore": {
+    "/usuarios/{userId}": {
+      "schema": {
+        "$ref": "#/entities/usuario"
+      },
+      "description": "Almacena los perfiles de los usuarios del sistema, incluyendo su rol."
+    },
+    "/productos/{productoId}": {
+      "schema": {
+        "$ref": "#/entities/producto"
+      },
+      "description": "Contiene el catálogo de todos los productos disponibles para la venta."
+    },
+    "/ventas/{ventaId}": {
+      "schema": {
+        "$ref": "#/entities/venta"
+      },
+      "description": "Registra cada transacción de venta realizada en el punto de venta."
+    },
+    "/compras/{compraId}": {
+      "schema": {
+        "$ref": "#/entities/compra"
+      },
+      "description": "Almacena los registros de las compras realizadas a proveedores."
+    },
+    "/reportes_financieros/{reporteId}": {
+      "schema": {
+        "$ref": "#/entities/reporte_financiero"
+      },
+      "description": "Guarda los reportes financieros generados."
+    }
+  }
+}

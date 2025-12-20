@@ -22,14 +22,35 @@ import {
   Settings,
   ShoppingBasket
 } from "lucide-react"
+import { useUser } from "@/firebase/auth/use-user"
+import { useDoc } from "@/firebase/firestore/use-doc"
+import { useEffect, useState } from "react"
 
 export default function DashboardSidebar() {
   const pathname = usePathname()
+  const { user } = useUser()
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  const { data: userData, loading } = useDoc<{ rol: string }>({
+    path: `usuarios`,
+    id: user?.uid || 'non-existent-user',
+  });
+
+  useEffect(() => {
+    if (userData) {
+      setUserRole(userData.rol);
+    }
+  }, [userData]);
+
 
   const isActive = (path: string) => {
     if (path === '/dashboard' && pathname !== '/dashboard') return false
     return pathname.startsWith(path)
   }
+  
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+  const isSuperAdmin = userRole === 'super_admin';
+
 
   return (
     <Sidebar>
@@ -51,31 +72,41 @@ export default function DashboardSidebar() {
               <Link href="/dashboard"><LayoutDashboard /><span>Dashboard</span></Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Productos" isActive={isActive('/dashboard/products')}>
-              <Link href="/dashboard/products"><Boxes /><span>Productos</span></Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {isAdmin && (
+            <>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Productos" isActive={isActive('/dashboard/products')}>
+                  <Link href="/dashboard/products"><Boxes /><span>Productos</span></Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Ventas" isActive={isActive('/dashboard/sales')}>
               <Link href="/dashboard/sales"><ShoppingCart /><span>Ventas</span></Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Compras" isActive={isActive('/dashboard/purchases')}>
-              <Link href="/dashboard/purchases"><Truck /><span>Compras</span></Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Reportes" isActive={isActive('/dashboard/reports')}>
-              <Link href="/dashboard/reports"><BarChart3 /><span>Reportes</span></Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Usuarios" isActive={isActive('/dashboard/users')}>
-              <Link href="/dashboard/users"><Users /><span>Usuarios</span></Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {isAdmin && (
+            <>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Compras" isActive={isActive('/dashboard/purchases')}>
+                  <Link href="/dashboard/purchases"><Truck /><span>Compras</span></Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Reportes" isActive={isActive('/dashboard/reports')}>
+                  <Link href="/dashboard/reports"><BarChart3 /><span>Reportes</span></Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </>
+          )}
+          {isSuperAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Usuarios" isActive={isActive('/dashboard/users')}>
+                <Link href="/dashboard/users"><Users /><span>Usuarios</span></Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>

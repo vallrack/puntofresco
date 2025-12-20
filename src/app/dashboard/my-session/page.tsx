@@ -21,6 +21,8 @@ import { format, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Banknote, CreditCard, Landmark, DollarSign } from 'lucide-react';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+
 
 export default function MySessionPage() {
   const { user, loading: userLoading } = useUser();
@@ -65,6 +67,14 @@ export default function MySessionPage() {
       { total: 0, efectivo: 0, tarjeta: 0, transferencia: 0 }
     );
   }, [todaySales]);
+
+  const chartData = useMemo(() => {
+    return [
+      { name: 'Efectivo', total: salesSummary.efectivo },
+      { name: 'Tarjeta', total: salesSummary.tarjeta },
+      { name: 'Transferencia', total: salesSummary.transferencia },
+    ];
+  }, [salesSummary]);
   
   const loading = userLoading || loadingSales;
 
@@ -75,7 +85,7 @@ export default function MySessionPage() {
           <CardTitle>Mi Cierre de Caja del Día</CardTitle>
           <CardDescription>
             Resumen de tus ventas realizadas hoy,{' '}
-            {format(new Date(), 'eeee dd \'de\' MMMM', { locale: es })}.
+            {format(new Date(), "eeee dd 'de' MMMM", { locale: es })}.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -121,49 +131,67 @@ export default function MySessionPage() {
               </CardContent>
             </Card>
           </div>
-          
-          <Card>
-            <CardHeader>
-                <CardTitle>Detalle de Ventas de Hoy</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="overflow-x-auto">
-                    <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead>Hora</TableHead>
-                        <TableHead>ID Venta</TableHead>
-                        <TableHead>Método de Pago</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {todaySales.length === 0 && (
+
+          <div className="grid gap-6 md:grid-cols-2">
+             <Card className="md:col-span-1">
+                <CardHeader>
+                    <CardTitle>Ventas por Método de Pago</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={chartData}>
+                            <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
+                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`}/>
+                            <Tooltip formatter={(value: number) => [`$${value.toFixed(2)}`, "Total"]} cursor={{fill: 'hsl(var(--muted))'}} />
+                            <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+            
+            <Card className="md:col-span-1">
+                <CardHeader>
+                    <CardTitle>Detalle de Ventas de Hoy</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="overflow-x-auto">
+                        <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center py-10">
-                                No has realizado ventas hoy.
+                            <TableHead>Hora</TableHead>
+                            <TableHead>ID Venta</TableHead>
+                            <TableHead>Método de Pago</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {todaySales.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center py-10">
+                                    No has realizado ventas hoy.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                            {todaySales.map((sale) => (
+                            <TableRow key={sale.id}>
+                                <TableCell className="font-medium">
+                                {format(sale.fecha.toDate(), 'p', { locale: es })}
+                                </TableCell>
+                                <TableCell className="font-mono text-xs">{sale.id}</TableCell>
+                                <TableCell>
+                                <Badge variant="outline">{sale.metodoPago}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right font-bold">
+                                ${sale.total.toFixed(2)}
                                 </TableCell>
                             </TableRow>
-                        )}
-                        {todaySales.map((sale) => (
-                        <TableRow key={sale.id}>
-                            <TableCell className="font-medium">
-                            {format(sale.fecha.toDate(), 'p', { locale: es })}
-                            </TableCell>
-                            <TableCell className="font-mono text-xs">{sale.id}</TableCell>
-                            <TableCell>
-                            <Badge variant="outline">{sale.metodoPago}</Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-bold">
-                            ${sale.total.toFixed(2)}
-                            </TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-          </Card>
+                            ))}
+                        </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+          </div>
         </>
       )}
     </div>

@@ -46,7 +46,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { useCollection, useUser, useDoc } from '@/firebase';
+import { useCollection, useUser, useDoc, useFirestore } from '@/firebase';
 import type { User as AppUser } from '@/lib/types';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -62,6 +62,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { createUser } from '@/lib/users';
 import { Badge } from '@/components/ui/badge';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 
 const userSchema = z.object({
@@ -70,25 +71,38 @@ const userSchema = z.object({
   rol: z.enum(['admin', 'vendedor']),
 });
 
+const editUserSchema = z.object({
+  rol: z.enum(['admin', 'vendedor']),
+});
+
 type UserFormValues = z.infer<typeof userSchema>;
+type EditUserFormValues = z.infer<typeof editUserSchema>;
 
 export default function UsersPage() {
   const { user: currentUser } = useUser();
   const { data: currentUserData } = useDoc<{ rol: string }>({ path: 'usuarios', id: currentUser?.uid });
   const { data: users, loading, forceUpdate } = useCollection<AppUser>({ path: 'usuarios' });
+  const firestore = useFirestore();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isNewUserDialogOpen, setIsNewUserDialogOpen] = useState(false);
+  const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
+  const [isDeleteUserDialogOpen, setIsDeleteUserDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
   
   const { toast } = useToast();
 
-  const form = useForm<UserFormValues>({
+  const newUserForm = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
       email: '',
       password: '',
       rol: 'vendedor',
     },
+  });
+
+  const editUserForm = useForm<EditUserFormValues>({
+    resolver: zodResolver(editUserSchema),
   });
   
   const isSuperAdmin = useMemo(() => currentUserData?.rol === 'super_admin', [currentUserData]);
@@ -99,12 +113,12 @@ export default function UsersPage() {
     );
   }, [users, searchTerm]);
   
-  const onSubmit = async (values: UserFormValues) => {
+  const onNewUserSubmit = async (values: UserFormValues) => {
     try {
       await createUser(values);
       toast({ title: 'Éxito', description: 'Usuario creado correctamente.' });
       forceUpdate();
-      setIsDialogOpen(false);
+      setIsNewUserDialogOpen(false);
     } catch (error: any) {
         console.error(error);
         toast({
@@ -115,12 +129,54 @@ export default function UsersPage() {
     }
   };
 
-  const onDialogClose = (open: boolean) => {
-    if (!open) {
-      form.reset();
+  const onEditUserSubmit = async (values: EditUserFormValues) => {
+    if (!selectedUser || !firestore) return;
+    try {
+      const userRef = doc(firestore, 'usuarios', selectedUser.id);
+      await updateDoc(userRef, { rol: values.rol });
+      toast({ title: 'Éxito', description: 'Rol de usuario actualizado.' });
+      forceUpdate();
+      setIsEditUserDialogOpen(false);
+    } catch (error: any) {
+       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo actualizar el rol.' });
     }
-    setIsDialogOpen(open);
   };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser || !firestore) return;
+    try {
+        const userRef = doc(firestore, 'usuarios', selectedUser.id);
+        await deleteDoc(userRef);
+        toast({ title: 'Éxito', description: 'Usuario eliminado de Firestore.' });
+        forceUpdate();
+        setIsDeleteUserDialogOpen(false);
+    } catch (error: any) {
+       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el usuario.' });
+    }
+  };
+  
+  const openEditDialog = (user: AppUser) => {
+    setSelectedUser(user);
+    editUserForm.setValue('rol', user.rol === 'super_admin' ? 'admin' : user.rol);
+    setIsEditUserDialogOpen(true);
+  };
+  
+  const openDeleteDialog = (user: AppUser) => {
+    setSelectedUser(user);
+    setIsDeleteUserDialogOpen(true);
+  };
+
+  useEffect(() => {
+    if (!isNewUserDialogOpen) {
+      newUserForm.reset();
+    }
+  }, [isNewUserDialogOpen, newUserForm]);
+
+  useEffect(() => {
+    if (!isEditUserDialogOpen && !isDeleteUserDialogOpen) {
+      setSelectedUser(null);
+    }
+  }, [isEditUserDialogOpen, isDeleteUserDialogOpen]);
   
   if (!isSuperAdmin) {
     return (
@@ -136,7 +192,6 @@ export default function UsersPage() {
     );
   }
 
-
   return (
     <>
       <Card>
@@ -149,7 +204,7 @@ export default function UsersPage() {
               </CardDescription>
             </div>
             {isSuperAdmin && (
-              <Button onClick={() => setIsDialogOpen(true)}>
+              <Button onClick={() => setIsNewUserDialogOpen(true)}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Nuevo Usuario
               </Button>
@@ -210,11 +265,11 @@ export default function UsersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEditDialog(user)}>
                               <Edit className="mr-2 h-4 w-4" />
                               Editar Rol
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(user)}>
                               <Trash2 className="mr-2 h-4 w-4" />
                               Eliminar
                             </DropdownMenuItem>
@@ -229,7 +284,8 @@ export default function UsersPage() {
         </CardContent>
       </Card>
       
-      <Dialog open={isDialogOpen} onOpenChange={onDialogClose}>
+      {/* New User Dialog */}
+      <Dialog open={isNewUserDialogOpen} onOpenChange={setIsNewUserDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Nuevo Usuario</DialogTitle>
@@ -237,10 +293,10 @@ export default function UsersPage() {
               Crea un nuevo perfil para tu equipo.
             </DialogDescription>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <Form {...newUserForm}>
+            <form onSubmit={newUserForm.handleSubmit(onNewUserSubmit)} className="space-y-4 py-4">
               <FormField
-                control={form.control}
+                control={newUserForm.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
@@ -253,7 +309,7 @@ export default function UsersPage() {
                 )}
               />
                <FormField
-                control={form.control}
+                control={newUserForm.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
@@ -266,7 +322,7 @@ export default function UsersPage() {
                 )}
               />
               <FormField
-                  control={form.control}
+                  control={newUserForm.control}
                   name="rol"
                   render={({ field }) => (
                     <FormItem>
@@ -292,12 +348,75 @@ export default function UsersPage() {
                     Cancelar
                   </Button>
                 </DialogClose>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? 'Creando...' : 'Crear Usuario'}
+                <Button type="submit" disabled={newUserForm.formState.isSubmitting}>
+                  {newUserForm.formState.isSubmitting ? 'Creando...' : 'Crear Usuario'}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditUserDialogOpen} onOpenChange={setIsEditUserDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Rol de Usuario</DialogTitle>
+            <DialogDescription>
+              Cambia el rol para <span className="font-semibold">{selectedUser?.email}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editUserForm}>
+            <form onSubmit={editUserForm.handleSubmit(onEditUserSubmit)} className="space-y-4 py-4">
+              <FormField
+                  control={editUserForm.control}
+                  name="rol"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rol</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona un rol" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="vendedor">Vendedor</SelectItem>
+                          <SelectItem value="admin">Administrador</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="secondary">
+                    Cancelar
+                  </Button>
+                </DialogClose>
+                <Button type="submit" disabled={editUserForm.formState.isSubmitting}>
+                  {editUserForm.formState.isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog open={isDeleteUserDialogOpen} onOpenChange={setIsDeleteUserDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Estás seguro?</DialogTitle>
+            <DialogDescription>
+              Esta acción no se puede deshacer. Se eliminará el perfil de Firestore para <strong className="break-all">{selectedUser?.email}</strong>. El usuario no podrá iniciar sesión.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setIsDeleteUserDialogOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteUser}>Sí, eliminar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

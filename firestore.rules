@@ -31,8 +31,7 @@ service cloud.firestore {
     // --- REGLAS POR COLECCIÓN ---
 
     match /usuarios/{userId} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
-      // Solo un super_admin puede crear nuevos usuarios
+      allow read: if isAuthenticated() && (isOwner(userId) || isSuperAdmin());
       allow create: if isSuperAdmin();
       allow update, delete: if isSuperAdmin();
     }
@@ -40,19 +39,13 @@ service cloud.firestore {
     match /productos/{productoId} {
       allow read: if isAuthenticated();
       allow create: if isAdmin();
-      // Admins y Vendedores pueden actualizar productos.
-      // Los vendedores lo necesitan para actualizar el stock durante una venta.
       allow update: if isAdmin() || isVendedor();
       allow delete: if isAdmin();
     }
 
     match /ventas/{ventaId} {
-      // Los admins leen todo, los vendedores solo su propia venta.
       allow get: if isAdmin() || (isVendedor() && resource.data.vendedorId == request.auth.uid);
-      // Los admins listan todo, los vendedores solo pueden listar SUS ventas.
       allow list: if isAdmin() || (isVendedor() && request.query.where[0][2] == request.auth.uid);
-      // Cualquier usuario autenticado puede crear una venta si el vendedorId es el suyo.
-      // Esto es necesario para que la transacción de venta funcione.
       allow create: if isAuthenticated() && request.resource.data.vendedorId == request.auth.uid;
       allow update, delete: if isAdmin();
     }

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Search, Edit, Trash2, Upload } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Search, Edit, Trash2, Upload, QrCode, RefreshCcw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,6 +50,8 @@ import { addProduct } from "@/lib/products";
 import { uploadImage } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
+import { v4 as uuidv4 } from 'uuid';
+import ProductQRModal from "@/components/product-qr-modal";
 
 const productSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido."),
@@ -71,6 +73,8 @@ export default function ProductsPage() {
   const { data: userData } = useDoc<{ rol: string }>({ path: 'usuarios', id: user?.uid });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [selectedProductQR, setSelectedProductQR] = useState<Product | null>(null);
   const { toast } = useToast();
 
   const form = useForm<ProductFormValues>({
@@ -96,6 +100,10 @@ export default function ProductsPage() {
         product.sku.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [products, searchTerm]);
+
+  const handleGenerateSKU = () => {
+    form.setValue('sku', uuidv4());
+  };
   
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -146,6 +154,11 @@ export default function ProductsPage() {
     setIsDialogOpen(open);
   }
 
+  const openQRModal = (product: Product) => {
+    setSelectedProductQR(product);
+    setIsQRModalOpen(true);
+  }
+
 
   return (
     <>
@@ -181,6 +194,7 @@ export default function ProductsPage() {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>SKU</TableHead>
+                <TableHead>Código QR</TableHead>
                 <TableHead>Precio Venta</TableHead>
                 <TableHead>Precio Compra</TableHead>
                 <TableHead>Stock</TableHead>
@@ -191,14 +205,14 @@ export default function ProductsPage() {
             <TableBody>
               {loading && (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-center">
+                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center">
                     Cargando...
                   </TableCell>
                 </TableRow>
               )}
               {!loading && filteredProducts?.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-center">
+                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center">
                     No se encontraron productos.
                   </TableCell>
                 </TableRow>
@@ -207,6 +221,11 @@ export default function ProductsPage() {
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.nombre}</TableCell>
                   <TableCell>{product.sku}</TableCell>
+                   <TableCell>
+                    <Button variant="outline" size="icon" onClick={() => openQRModal(product)}>
+                      <QrCode className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                   <TableCell>${product.precioVenta.toFixed(2)}</TableCell>
                   <TableCell>${product.precioCompra.toFixed(2)}</TableCell>
                   <TableCell>{product.stock}</TableCell>
@@ -270,9 +289,15 @@ export default function ProductsPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>SKU / Código de Barras</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej: 7501055312345" {...field} />
-                      </FormControl>
+                       <div className="flex gap-2">
+                        <FormControl>
+                          <Input placeholder="Ej: 7501055312345" {...field} />
+                        </FormControl>
+                        <Button type="button" variant="outline" onClick={handleGenerateSKU}>
+                          <RefreshCcw className="mr-2 h-4 w-4" />
+                          Generar
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -400,6 +425,13 @@ export default function ProductsPage() {
           </Form>
         </DialogContent>
       </Dialog>
+      {selectedProductQR && (
+        <ProductQRModal
+          product={selectedProductQR}
+          isOpen={isQRModalOpen}
+          onClose={() => setIsQRModalOpen(false)}
+        />
+      )}
     </>
   );
 }

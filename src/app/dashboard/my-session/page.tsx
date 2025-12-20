@@ -45,10 +45,15 @@ export default function MySessionPage() {
 
     return sales
       .filter((sale) => {
-        const saleDate = sale.fecha?.toDate();
+        // Robust date handling for Firestore Timestamp
+        const saleDate = sale.fecha?.toDate ? sale.fecha.toDate() : new Date(sale.fecha);
         return saleDate >= start && saleDate <= end;
       })
-      .sort((a, b) => b.fecha.toDate().getTime() - a.fecha.toDate().getTime());
+      .sort((a, b) => {
+          const dateA = a.fecha?.toDate ? a.fecha.toDate() : new Date(a.fecha);
+          const dateB = b.fecha?.toDate ? b.fecha.toDate() : new Date(b.fecha);
+          return dateB.getTime() - dateA.getTime()
+      });
   }, [sales]);
 
   const salesSummary = useMemo(() => {
@@ -77,6 +82,10 @@ export default function MySessionPage() {
   }, [salesSummary]);
   
   const loading = userLoading || loadingSales;
+
+  const getSaleDate = (sale: Sale): Date => {
+      return sale.fecha?.toDate ? sale.fecha.toDate() : new Date(sale.fecha);
+  }
 
   return (
     <div className="space-y-6">
@@ -175,7 +184,7 @@ export default function MySessionPage() {
                             {todaySales.map((sale) => (
                             <TableRow key={sale.id}>
                                 <TableCell className="font-medium">
-                                {format(sale.fecha.toDate(), 'p', { locale: es })}
+                                {format(getSaleDate(sale), 'p', { locale: es })}
                                 </TableCell>
                                 <TableCell className="font-mono text-xs">{sale.id}</TableCell>
                                 <TableCell>

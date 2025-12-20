@@ -1,7 +1,6 @@
 // app/api/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminStorage } from '@/lib/firebase-admin';
-import { randomUUID } from 'crypto';
 
 export async function POST(request: NextRequest) {
   console.log('📤 API /upload - Petición recibida');
@@ -82,24 +81,23 @@ export async function POST(request: NextRequest) {
     await fileRef.save(buffer, {
       contentType: file.type,
       metadata: {
-        metadata: {
-          firebaseStorageDownloadTokens: randomUUID(),
-        }
+        // No es necesario generar tokens de descarga para URLs públicas
       },
     });
 
     console.log('✅ Archivo subido exitosamente');
 
-    // Construir la URL firmada para acceso
-    const [signedUrl] = await fileRef.getSignedUrl({
-        action: 'read',
-        expires: '01-01-2500', // Una fecha de expiración muy lejana
-    });
+    // Hacer público
+    await fileRef.makePublic();
+    console.log('✅ Archivo hecho público');
 
-    console.log('✅ Upload completado:', signedUrl);
+    // Construir URL pública
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+
+    console.log('✅ Upload completado:', publicUrl);
 
     return NextResponse.json({
-      url: signedUrl,
+      url: publicUrl,
       message: 'Imagen subida exitosamente',
     });
   } catch (error: any) {

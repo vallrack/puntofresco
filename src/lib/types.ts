@@ -48,15 +48,18 @@ export interface Supplier {
   direccion?: string;
 }
 
+export interface PurchaseItem {
+  productId: string;
+  nombre: string;
+  cantidad: number;
+  costoUnitario: number;
+}
+
 export interface Purchase {
   id?: string;
+  compraId?: string;
   proveedorId: string;
   fecha: any;
-  items: {
-    productId: string;
-    nombre: string;
-    cantidad: number;
-    costoUnitario: number;
-  }[];
+  items: PurchaseItem[];
   total: number;
 }

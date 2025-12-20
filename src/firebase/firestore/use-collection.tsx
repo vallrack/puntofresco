@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState }from 'react';
+import { useEffect, useState, useCallback }from 'react';
 import {
   onSnapshot,
   query,
@@ -33,14 +33,12 @@ export function useCollection<T extends DocumentData>({
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (userLoading) {
-      // Still waiting for auth state
+  const fetchData = useCallback(() => {
+     if (userLoading) {
       return;
     }
 
     if (!user) {
-      // User is not authenticated, don't fetch data
       setData(null);
       setLoading(false);
       return;
@@ -54,7 +52,7 @@ export function useCollection<T extends DocumentData>({
     } else {
       q = query(collectionRef);
     }
-
+     setLoading(true);
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc) => ({
         ...doc.data(),
@@ -68,8 +66,17 @@ export function useCollection<T extends DocumentData>({
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [firestore, path, user, userLoading, JSON.stringify(queryParams)]);
+    return unsubscribe;
+  }, [firestore, path, user, userLoading, JSON.stringify(queryParams)])
 
-  return { data, loading };
+  useEffect(() => {
+    const unsubscribe = fetchData();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [fetchData]);
+
+  return { data, loading, forceUpdate: fetchData };
 }

@@ -18,16 +18,24 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, PlusCircle, Eye } from 'lucide-react';
-import { useCollection } from '@/firebase';
+import { useCollection, useUser, useDoc } from '@/firebase';
 import type { Purchase, Supplier } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
+import RegisterPurchaseDialog from '@/components/register-purchase-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PurchasesPage() {
-  const { data: purchases, loading: loadingPurchases } = useCollection<Purchase>({ path: 'compras' });
+  const { data: purchases, loading: loadingPurchases, forceUpdate } = useCollection<Purchase>({ path: 'compras' });
   const { data: suppliers, loading: loadingSuppliers } = useCollection<Supplier>({ path: 'proveedores' });
+  const { user } = useUser();
+  const { data: userData } = useDoc<{ rol: string }>({ path: 'usuarios', id: user?.uid });
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const isAdmin = useMemo(() => userData?.rol === 'admin' || userData?.rol === 'super_admin', [userData]);
 
   const supplierMap = useMemo(() => {
     if (!suppliers) return new Map();
@@ -57,6 +65,15 @@ export default function PurchasesPage() {
 
   const loading = loadingPurchases || loadingSuppliers;
 
+  const handlePurchaseRegistered = () => {
+    setIsDialogOpen(false);
+    forceUpdate(); // Force a re-fetch of the purchases data
+    toast({
+      title: "Éxito",
+      description: "La compra se ha registrado y el stock ha sido actualizado.",
+    });
+  }
+
   return (
     <>
       <Card>
@@ -68,10 +85,12 @@ export default function PurchasesPage() {
                 Registro de compras a proveedores y actualización de stock.
               </CardDescription>
             </div>
-            <Button onClick={() => alert('Próximamente: Registrar nueva compra')}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Registrar Compra
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Registrar Compra
+              </Button>
+            )}
           </div>
           <div className="relative mt-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -128,7 +147,7 @@ export default function PurchasesPage() {
                       </TableCell>
                       <TableCell className="text-right font-bold">${purchase.total.toFixed(2)}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="icon" onClick={() => alert(`Detalles de la compra: ${purchase.id}`)}>
+                        <Button variant="outline" size="icon" onClick={() => alert(`Próximamente: Detalles de la compra: ${purchase.id}`)}>
                             <Eye className="h-4 w-4" />
                             <span className="sr-only">Ver Detalles</span>
                           </Button>
@@ -140,6 +159,14 @@ export default function PurchasesPage() {
           </Table>
         </CardContent>
       </Card>
+      
+      {isDialogOpen && (
+        <RegisterPurchaseDialog 
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          onPurchaseRegistered={handlePurchaseRegistered}
+        />
+      )}
     </>
   );
 }

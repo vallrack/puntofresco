@@ -6,9 +6,9 @@ import ProductCard from "@/components/product-card"
 import Cart from "@/components/cart"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import type { Product } from "@/lib/types"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
-const mockProducts: Product[] = PlaceHolderImages.map((p, i) => ({
+const generateMockProducts = (): Product[] => PlaceHolderImages.map((p, i) => ({
   id: p.id,
   name: p.description,
   sku: `SKU-00${i+1}`,
@@ -22,7 +22,12 @@ const mockProducts: Product[] = PlaceHolderImages.map((p, i) => ({
 }));
 
 export default function DashboardPage() {
-  const [products] = useState<Product[]>(mockProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    setProducts(generateMockProducts());
+  }, []);
+
   const categories = [...new Set(products.map(p => p.category))];
 
   return (

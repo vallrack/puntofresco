@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -25,13 +25,15 @@ import { Banknote, CreditCard, Landmark, DollarSign, Printer, CheckCircle2 } fro
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 
 function getSaleDate(sale: Sale): Date {
-  // Maneja de forma segura Timestamps de Firestore y otros formatos de fecha
   return sale.fecha?.toDate ? sale.fecha.toDate() : new Date(sale.fecha);
 }
 
 export default function MySessionPage() {
   const { user, loading: userLoading } = useUser();
   const printRef = useRef<HTMLDivElement>(null);
+  
+  const [todaySales, setTodaySales] = useState<Sale[]>([]);
+  const [salesSummary, setSalesSummary] = useState({ total: 0, efectivo: 0, tarjeta: 0, transferencia: 0 });
 
   const salesQuery = useMemo(() => {
     if (!user) return undefined;
@@ -43,36 +45,39 @@ export default function MySessionPage() {
     query: salesQuery,
   });
 
-  const todaySales = useMemo(() => {
-    if (!sales) return [];
-    const now = new Date();
-    const start = startOfDay(now);
-    const end = endOfDay(now);
+  useEffect(() => {
+    if (sales) {
+      const now = new Date();
+      const start = startOfDay(now);
+      const end = endOfDay(now);
 
-    return sales
-      .filter((sale) => {
-        const saleDate = getSaleDate(sale);
-        return saleDate >= start && saleDate <= end;
-      })
-      .sort((a, b) => {
-          const dateA = getSaleDate(a);
-          const dateB = getSaleDate(b);
-          return dateB.getTime() - dateA.getTime();
-      });
+      const filtered = sales
+        .filter((sale) => {
+          const saleDate = getSaleDate(sale);
+          return saleDate >= start && saleDate <= end;
+        })
+        .sort((a, b) => {
+            const dateA = getSaleDate(a);
+            const dateB = getSaleDate(b);
+            return dateB.getTime() - dateA.getTime();
+        });
+      
+      setTodaySales(filtered);
+
+      const summary = filtered.reduce(
+        (acc, sale) => {
+          acc.total += sale.total;
+          if (sale.metodoPago === 'Efectivo') acc.efectivo += sale.total;
+          else if (sale.metodoPago === 'Tarjeta') acc.tarjeta += sale.total;
+          else if (sale.metodoPago === 'Transferencia') acc.transferencia += sale.total;
+          return acc;
+        },
+        { total: 0, efectivo: 0, tarjeta: 0, transferencia: 0 }
+      );
+      setSalesSummary(summary);
+    }
   }, [sales]);
 
-  const salesSummary = useMemo(() => {
-    return todaySales.reduce(
-      (acc, sale) => {
-        acc.total += sale.total;
-        if (sale.metodoPago === 'Efectivo') acc.efectivo += sale.total;
-        else if (sale.metodoPago === 'Tarjeta') acc.tarjeta += sale.total;
-        else if (sale.metodoPago === 'Transferencia') acc.transferencia += sale.total;
-        return acc;
-      },
-      { total: 0, efectivo: 0, tarjeta: 0, transferencia: 0 }
-    );
-  }, [todaySales]);
 
   const chartData = [
     { name: 'Efectivo', total: salesSummary.efectivo, color: '#10b981' },

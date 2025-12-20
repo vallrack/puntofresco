@@ -16,9 +16,6 @@ export default function Home() {
           Gestión de inventario y punto de venta para tu negocio. Rápido, visual y siempre fresco.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-          <Button asChild size="lg" className="font-semibold">
-            <Link href="/dashboard">Entrar al Dashboard</Link>
-          </Button>
           <Button asChild size="lg" variant="outline" className="font-semibold">
             <Link href="/login">Iniciar Sesión</Link>
           </Button>

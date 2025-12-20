@@ -23,15 +23,15 @@ type CollectionOptions = {
  * @param options - The collection options.
  * @returns The collection data.
  */
-export function useCollection<T extends DocumentData>(
-  options: CollectionOptions,
-) {
+export function useCollection<T extends DocumentData>({
+  path,
+  query: queryParams,
+}: CollectionOptions) {
   const firestore = useFirestore();
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { path, query: queryParams } = options;
     let q: Query;
 
     if (queryParams) {
@@ -50,7 +50,7 @@ export function useCollection<T extends DocumentData>(
     });
 
     return () => unsubscribe();
-  }, [firestore, options]);
+  }, [firestore, path, JSON.stringify(queryParams)]);
 
   return { data, loading };
 }

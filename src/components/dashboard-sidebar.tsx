@@ -31,14 +31,16 @@ export default function DashboardSidebar() {
   const { user } = useUser()
   const [userRole, setUserRole] = useState<string | null>(null);
 
-  const { data: userData, loading } = useDoc<{ rol: string }>({
-    path: `usuarios`,
+  const { data: userData } = useDoc<{ rol: string }>({
+    path: 'usuarios',
     id: user?.uid || 'non-existent-user',
   });
 
   useEffect(() => {
     if (userData) {
       setUserRole(userData.rol);
+    } else {
+      setUserRole(null);
     }
   }, [userData]);
 

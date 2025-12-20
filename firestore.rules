@@ -58,5 +58,10 @@ service cloud.firestore {
     match /reportes_financieros/{reporteId} {
       allow read, write: if isAdmin();
     }
+    
+    match /categorias/{categoriaId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
   }
 }

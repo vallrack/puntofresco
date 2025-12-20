@@ -33,8 +33,15 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCollection, useUser, useDoc } from "@/firebase";
-import type { Product } from "@/lib/types";
+import type { Product, Category } from "@/lib/types";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -67,7 +74,8 @@ const productSchema = z.object({
 type ProductFormValues = z.infer<typeof productSchema>;
 
 export default function ProductsPage() {
-  const { data: products, loading } = useCollection<Product>({ path: "productos" });
+  const { data: products, loading: loadingProducts } = useCollection<Product>({ path: "productos" });
+  const { data: categories, loading: loadingCategories } = useCollection<Category>({ path: "categorias" });
   const [searchTerm, setSearchTerm] = useState("");
   const { user } = useUser();
   const { data: userData } = useDoc<{ rol: string }>({ path: 'usuarios', id: user?.uid });
@@ -131,7 +139,7 @@ export default function ProductsPage() {
       await addProduct({
         ...values,
         imageUrl: imageUrl,
-        imageHint: "custom product", // Or generate a hint if you want
+        imageHint: "custom product",
         creadoPor: user.uid,
         actualizadoPor: user.uid,
       });
@@ -158,6 +166,8 @@ export default function ProductsPage() {
     setSelectedProductQR(product);
     setIsQRModalOpen(true);
   }
+
+  const loading = loadingProducts || loadingCategories;
 
 
   return (
@@ -308,9 +318,21 @@ export default function ProductsPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Categoría</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej: Frutas y Verduras" {...field} />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona una categoría" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {loadingCategories && <SelectItem value="loading" disabled>Cargando...</SelectItem>}
+                          {categories?.map((category) => (
+                            <SelectItem key={category.id} value={category.nombre}>
+                              {category.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

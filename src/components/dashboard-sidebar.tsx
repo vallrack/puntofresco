@@ -20,7 +20,8 @@ import {
   Users,
   LifeBuoy,
   Settings,
-  ShoppingBasket
+  ShoppingBasket,
+  FolderKanban,
 } from "lucide-react"
 import { useUser } from "@/firebase/auth/use-user"
 import { useDoc } from "@/firebase/firestore/use-doc"
@@ -33,7 +34,7 @@ export default function DashboardSidebar() {
 
   const { data: userData } = useDoc<{ rol: string }>({
     path: 'usuarios',
-    id: user?.uid || 'non-existent-user',
+    id: user?.uid,
   });
 
   useEffect(() => {
@@ -79,6 +80,11 @@ export default function DashboardSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Productos" isActive={isActive('/dashboard/products')}>
                   <Link href="/dashboard/products"><Boxes /><span>Productos</span></Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Categorías" isActive={isActive('/dashboard/categories')}>
+                  <Link href="/dashboard/categories"><FolderKanban /><span>Categorías</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </>

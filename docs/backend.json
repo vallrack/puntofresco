@@ -123,6 +123,20 @@
       "description": "Representa un reporte financiero.",
       "type": "object",
       "properties": {}
+    },
+    "categoria": {
+      "title": "Categoría",
+      "description": "Categoría de un producto.",
+      "type": "object",
+      "properties": {
+        "nombre": {
+          "type": "string",
+          "description": "Nombre de la categoría."
+        }
+      },
+      "required": [
+        "nombre"
+      ]
     }
   },
   "auth": {
@@ -160,6 +174,12 @@
         "$ref": "#/entities/reporte_financiero"
       },
       "description": "Guarda los reportes financieros generados."
+    },
+    "/categorias/{categoriaId}": {
+      "schema": {
+        "$ref": "#/entities/categoria"
+      },
+      "description": "Almacena las categorías de los productos."
     }
   }
 }

@@ -32,4 +32,7 @@ export interface Sale {
   fecha: any;
 }
 
-    
+export interface Category {
+  id: string;
+  nombre: string;
+}

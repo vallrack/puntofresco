@@ -114,11 +114,10 @@ export default function UsersPage() {
   const filteredUsers = useMemo(() => {
     if (!users) return [];
     return users.filter((user) =>
-        user.id !== currentUser?.uid && 
-        (user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         (user.nombre && user.nombre.toLowerCase().includes(searchTerm.toLowerCase())))
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         (user.nombre && user.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-  }, [users, searchTerm, currentUser]);
+  }, [users, searchTerm]);
   
  const onNewUserSubmit = async (values: UserFormValues) => {
     try {

@@ -47,7 +47,17 @@ export default function LoginPage() {
            // This should only happen once for the very first login
            await setDoc(userDocRef, { rol: 'super_admin', email: user.email, nombre: 'Super Admin' });
         } else {
-          throw new Error('Usuario no autorizado. Contacta al administrador.');
+          // This path is for registered users waiting for a role
+          // We can let them in, but the app should handle the "no role" state gracefully
+          // For now, we assume they need a role assigned by an admin.
+           await auth.signOut(); // Sign them out as they are not yet approved
+           throw new Error('Tu cuenta está pendiente de aprobación por un administrador.');
+        }
+      } else {
+        // If the doc exists, check if the super_admin needs a name field.
+        const userData = userDocSnap.data();
+        if (email === 'vallrack67@gmail.com' && !userData.nombre) {
+             await setDoc(userDocRef, { nombre: 'Super Admin' }, { merge: true });
         }
       }
       
@@ -59,9 +69,9 @@ export default function LoginPage() {
 
     } catch (err: any) {
       let errorMessage = 'Ocurrió un error al iniciar sesión.';
-      if (err.message === 'Usuario no autorizado. Contacta al administrador.') {
-        errorMessage = err.message;
-      } else {
+       if (err.message === 'Tu cuenta está pendiente de aprobación por un administrador.') {
+          errorMessage = err.message;
+       } else {
         switch (err.code) {
           case 'auth/user-not-found':
           case 'auth/wrong-password':

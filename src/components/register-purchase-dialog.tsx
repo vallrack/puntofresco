@@ -116,11 +116,11 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
     setProductSearchTerm('');
   };
 
+  const currentItems = form.watch('items');
   const total = useMemo(() => {
-    const items = form.watch('items');
-    if (!items) return 0;
-    return items.reduce((acc, item) => acc + (item.cantidad || 0) * (item.costoUnitario || 0), 0);
-  }, [form.watch('items')]);
+    if (!currentItems) return 0;
+    return currentItems.reduce((acc, item) => acc + (item.cantidad || 0) * (item.costoUnitario || 0), 0);
+  }, [currentItems]);
 
   const onSubmit = async (values: PurchaseFormValues) => {
     if (!firestore) {
@@ -243,34 +243,39 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    fields.map((item, index) => (
-                                        <TableRow key={item.key}>
-                                            <TableCell className="font-medium">{item.nombre}</TableCell>
-                                            <TableCell>
-                                                <Input 
-                                                    type="number"
-                                                    {...form.register(`items.${index}.cantidad`)}
-                                                    className="h-8"
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input 
-                                                    type="number"
-                                                    step="0.01"
-                                                    {...form.register(`items.${index}.costoUnitario`)}
-                                                    className="h-8"
-                                                />
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                ${( (form.watch(`items.${index}.cantidad`) || 0) * (form.watch(`items.${index}.costoUnitario`) || 0) ).toFixed(2)}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Button variant="ghost" size="icon" onClick={() => remove(index)}>
-                                                    <Trash2 className="h-4 w-4 text-destructive"/>
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                    fields.map((item, index) => {
+                                        const cantidad = form.watch(`items.${index}.cantidad`) || 0;
+                                        const costoUnitario = form.watch(`items.${index}.costoUnitario`) || 0;
+                                        const subtotal = cantidad * costoUnitario;
+                                        return (
+                                            <TableRow key={item.key}>
+                                                <TableCell className="font-medium">{item.nombre}</TableCell>
+                                                <TableCell>
+                                                    <Input 
+                                                        type="number"
+                                                        {...form.register(`items.${index}.cantidad`)}
+                                                        className="h-8"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input 
+                                                        type="number"
+                                                        step="0.01"
+                                                        {...form.register(`items.${index}.costoUnitario`)}
+                                                        className="h-8"
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    ${subtotal.toFixed(2)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Button variant="ghost" size="icon" onClick={() => remove(index)}>
+                                                        <Trash2 className="h-4 w-4 text-destructive"/>
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
                                 )}
                             </TableBody>
                         </Table>

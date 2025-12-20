@@ -4,53 +4,82 @@ import { getStorage } from 'firebase-admin/storage';
 
 let adminApp: App | undefined;
 
+// TEMPORAL: Credenciales hardcodeadas para desarrollo
+// TODO: Mover a variables de entorno en producción
+const FIREBASE_CONFIG = {
+  projectId: "punto-fresco-f0c35",
+  clientEmail: "firebase-adminsdk-fbsvc@punto-fresco-f0c35.iam.gserviceaccount.com",
+  privateKey: `-----BEGIN PRIVATE KEY-----
+MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCTyyfHdROIFHgU
+5RXCi9c9YFoQO2uEV83ZUATXDXUFZfcJ2Ees1azrji9mz2mqQy9+tPQMQ1ZY2lpj
+NVsZjt9/QXJtkCnaie7MgZTg9Z0YiBqIRNpP7hdAXvrKKDTEQH+JgDOBucwB66K5
+l9zXq/1o5hjtXv5C8rWYxtxSrUHD81li06CZEUcYwn9QE88OV4DoVsB22l7TVwnh
+fU3s4xvC1JQ+/syVn392BR0M7i05M7ohF8M09Wd+kexSiclfzxwPLPuItMJas95A
+lEejJgKwiFQqsOALGtF5jLytU3A/SJHRybC7omCYLl6ADMxyIQESO+LV2XimAo2Q
+qfuATJKDAgMBAAECggEACkQz/LKAy1SkrMrnEo8VQhG13+fIxbY1ufFJjMjGBrx5
+BymLfRGQxAIp/8nLrMSjAXm/dDSfRGfSnI6hx+o5U0UwFjVL+v7W5ETiGyhko8Yc
+lbe2tJO08MdIQ4+8bp+OXHZX3ZyS89UzBhJrCF5NqaJGPAL7xZnHjJfPyTx404wy
+bHwAHJ9S3rXeEXwWbu2yuDkk2SGiJ0rbxrBF5ZKjFs6MI+rW3T5KojvjbUFtx0FT
+2UKZ7HZrcJd8EhLfCRXyaRcTpvyV4fGUmaygwLbwZh0SejY3eMZ8FHY7xn8YNuG+
+kjOHfa4nlKuQKS3YjEX/KzRJPARwlaq9bjFV1ssOzQKBgQDMQu9Jwbv6iTD91qHo
+2tLzhiTtYywldUg4ZYjVOa2zYOWDN2t+opu3zgKW8UaVZtu1lpDRq/DLHKufsU2N
+llMJ+LpCNG5M1aI3T+0xNU+oMWNRTVJgYkDrx4wyBHB0K/WDyzDsT5Ws8xzsFSzI
+hLxu9oH8dVHBFhGAk8/u0sl7RQKBgQC5OqKKmLi4GqzRuhqaM59zjIuuOpg/yDmN
+KJ15d8TDps+4PWtkNnxEA4cOPVij5sAZUHEAmh8hUPMcfcFxaFC3IQVH/QRAky97
+LTPe4T6THsNblYyD0j2wyIF4XwEHffjqi8AelGN0TvCBBj761sjks/qnzQy65vGU
+WAvl7RbPJwKBgAk4JDDCC8f9FTb/zwMBjW/saBJG3aE7L+1Lt+dX2R01jGZlw/ZN
+RJYBOGCztynbIKOLjjHIfu/L9XsZt5RiapESpuWCFFBnfBDfDKeh7lx7Di6HPOaY
+yLFbqlo/lQvJSCWQsD6aQPkzZ+TH9+N9Cjw/6BILAYujgVq6UTJIVUu5AoGAXdTN
+KCaLVH/20dtTxI+oE5G75Iu8OntEZDSR6Ul5vJ8RFMTQVRigxJeA3/7Fm2m2IFy2
+kdaBNJBcRy+RQdDVKp+onDoY4FlvMRfJ8frqhv6LeiZ84v4q0BYSOBbwX4o6AR7A
+OP10kCO5A7NVTh5l8C0YKc7exwNcl4gups/+wPsCgYAQjyPp4H5mv7uWpxaC93CM
+Y8vkS8jrQaRMxEp00/UzQ2NapR8y8zowHK/1QFMDFaj7E41c6YmUS8fKMkFrpbTy
+XRaPhRNa8l4+oQpW7IWU9USd+rk7m9jK6OYSPrjrOLfVKWAFrYCRGCAvjIByR6Lv
+WjHQHc23ba6CUA1XxY0dUA==
+-----END PRIVATE KEY-----`,
+  storageBucket: "punto-fresco-f0c35.appspot.com",
+};
+
 export function getAdminApp() {
   // Si ya existe, retornarlo
   if (adminApp) {
+    console.log('♻️  Usando app de Firebase Admin existente');
     return adminApp;
   }
 
   // Si ya hay apps inicializadas, usar la primera
   const existingApps = getApps();
   if (existingApps.length > 0) {
+    console.log('♻️  Usando app de Firebase Admin existente (global)');
     adminApp = existingApps[0];
     return adminApp;
   }
 
-  // Validar que existan las variables de entorno
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-  const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-
-  if (!projectId || !clientEmail || !privateKey || !storageBucket) {
-    console.error('❌ Variables de entorno faltantes:', {
-      projectId: !!projectId,
-      clientEmail: !!clientEmail,
-      privateKey: !!privateKey,
-      storageBucket: !!storageBucket,
-    });
-    throw new Error(
-      'Faltan variables de entorno para Firebase Admin. Verifica .env.local'
-    );
-  }
-
   try {
     console.log('🔧 Inicializando Firebase Admin...');
-    
+    console.log('📋 Config:', {
+      projectId: FIREBASE_CONFIG.projectId,
+      clientEmail: FIREBASE_CONFIG.clientEmail,
+      storageBucket: FIREBASE_CONFIG.storageBucket,
+      privateKeyLength: FIREBASE_CONFIG.privateKey.length,
+    });
+
     adminApp = initializeApp({
       credential: cert({
-        projectId,
-        clientEmail,
-        privateKey: privateKey.replace(/\\n/g, '\n'),
+        projectId: FIREBASE_CONFIG.projectId,
+        clientEmail: FIREBASE_CONFIG.clientEmail,
+        privateKey: FIREBASE_CONFIG.privateKey,
       }),
-      storageBucket,
+      storageBucket: FIREBASE_CONFIG.storageBucket,
     });
 
     console.log('✅ Firebase Admin inicializado correctamente');
     return adminApp;
-  } catch (error) {
-    console.error('❌ Error inicializando Firebase Admin:', error);
+  } catch (error: any) {
+    console.error('❌ Error inicializando Firebase Admin:', {
+      message: error.message,
+      stack: error.stack,
+    });
     throw error;
   }
 }

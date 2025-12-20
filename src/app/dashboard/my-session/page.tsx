@@ -93,22 +93,23 @@ export default function MySessionPage() {
 
   return (
     <div className="space-y-6">
-      {/* Botones de Acción Superiores */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
-        <Card className="flex-1">
-          <CardHeader className="py-4">
-            <CardTitle>Mi Cierre de Caja del Día</CardTitle>
-            <CardDescription>
-              {format(new Date(), "eeee dd 'de' MMMM, yyyy", { locale: es })}
-            </CardDescription>
-          </CardHeader>
-        </Card>
-        <Button size="lg" className="h-16 gap-2 text-lg shadow-lg" onClick={handlePrint} disabled={todaySales.length === 0}>
-          <Printer className="h-5 w-5" />
-          Imprimir Reporte de Cierre
-        </Button>
-      </div>
-
+      <Card className="print:hidden">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1">
+                <CardTitle>Mi Cierre de Caja del Día</CardTitle>
+                <CardDescription>
+                {format(new Date(), "eeee dd 'de' MMMM, yyyy", { locale: es })}
+                </CardDescription>
+            </div>
+            <Button onClick={handlePrint} disabled={todaySales.length === 0}>
+              <Printer className="mr-2 h-4 w-4" />
+              Imprimir Reporte
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
+      
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>

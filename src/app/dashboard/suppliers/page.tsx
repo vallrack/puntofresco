@@ -202,64 +202,66 @@ export default function SuppliersPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Teléfono</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Dirección</TableHead>
-                {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading && (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 5 : 4} className="text-center">
-                    Cargando...
-                  </TableCell>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Teléfono</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Dirección</TableHead>
+                  {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
                 </TableRow>
-              )}
-              {!loading && filteredSuppliers?.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={isAdmin ? 5 : 4} className="text-center">
-                    No se encontraron proveedores.
-                  </TableCell>
-                </TableRow>
-              )}
-              {!loading &&
-                filteredSuppliers?.map((supplier) => (
-                  <TableRow key={supplier.id}>
-                    <TableCell className="font-medium">{supplier.nombre}</TableCell>
-                    <TableCell>{supplier.telefono || '-'}</TableCell>
-                    <TableCell>{supplier.email || '-'}</TableCell>
-                    <TableCell>{supplier.direccion || '-'}</TableCell>
-                    {isAdmin && (
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Abrir menú</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openEditDialog(supplier)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(supplier)}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
+              </TableHeader>
+              <TableBody>
+                {loading && (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 5 : 4} className="text-center">
+                      Cargando...
+                    </TableCell>
                   </TableRow>
-                ))}
-            </TableBody>
-          </Table>
+                )}
+                {!loading && filteredSuppliers?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 5 : 4} className="text-center">
+                      No se encontraron proveedores.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!loading &&
+                  filteredSuppliers?.map((supplier) => (
+                    <TableRow key={supplier.id}>
+                      <TableCell className="font-medium">{supplier.nombre}</TableCell>
+                      <TableCell>{supplier.telefono || '-'}</TableCell>
+                      <TableCell>{supplier.email || '-'}</TableCell>
+                      <TableCell>{supplier.direccion || '-'}</TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Abrir menú</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEditDialog(supplier)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(supplier)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

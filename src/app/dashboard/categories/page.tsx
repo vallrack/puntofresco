@@ -146,58 +146,60 @@ export default function CategoriesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading && (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 2 : 1} className="text-center">
-                    Cargando...
-                  </TableCell>
+                  <TableHead>Nombre</TableHead>
+                  {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
                 </TableRow>
-              )}
-              {!loading && filteredCategories?.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={isAdmin ? 2 : 1} className="text-center">
-                    No se encontraron categorías.
-                  </TableCell>
-                </TableRow>
-              )}
-              {!loading &&
-                filteredCategories?.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.nombre}</TableCell>
-                    {isAdmin && (
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Abrir menú</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
+              </TableHeader>
+              <TableBody>
+                {loading && (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 2 : 1} className="text-center">
+                      Cargando...
+                    </TableCell>
                   </TableRow>
-                ))}
-            </TableBody>
-          </Table>
+                )}
+                {!loading && filteredCategories?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 2 : 1} className="text-center">
+                      No se encontraron categorías.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!loading &&
+                  filteredCategories?.map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell className="font-medium">{category.nombre}</TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Abrir menú</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

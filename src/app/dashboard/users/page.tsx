@@ -228,66 +228,68 @@ export default function UsersPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Rol</TableHead>
-                {isSuperAdmin && <TableHead className="text-right">Acciones</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading && (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center">
-                    Cargando...
-                  </TableCell>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Rol</TableHead>
+                  {isSuperAdmin && <TableHead className="text-right">Acciones</TableHead>}
                 </TableRow>
-              )}
-              {!loading && filteredUsers?.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center">
-                    No se encontraron usuarios.
-                  </TableCell>
-                </TableRow>
-              )}
-              {!loading &&
-                filteredUsers?.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.email}</TableCell>
-                    <TableCell>
-                        <Badge 
-                            variant={user.rol === 'super_admin' ? 'default' : user.rol === 'admin' ? 'secondary' : 'outline'}
-                        >
-                            {user.rol}
-                        </Badge>
+              </TableHeader>
+              <TableBody>
+                {loading && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center">
+                      Cargando...
                     </TableCell>
-                    {isSuperAdmin && (
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0" disabled={user.rol === 'super_admin'}>
-                              <span className="sr-only">Abrir menú</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openEditDialog(user)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Editar Rol
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(user)}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
                   </TableRow>
-                ))}
-            </TableBody>
-          </Table>
+                )}
+                {!loading && filteredUsers?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center">
+                      No se encontraron usuarios.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!loading &&
+                  filteredUsers?.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.email}</TableCell>
+                      <TableCell>
+                          <Badge 
+                              variant={user.rol === 'super_admin' ? 'default' : user.rol === 'admin' ? 'secondary' : 'outline'}
+                          >
+                              {user.rol}
+                          </Badge>
+                      </TableCell>
+                      {isSuperAdmin && (
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0" disabled={user.rol === 'super_admin'}>
+                                <span className="sr-only">Abrir menú</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar Rol
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(user)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
       

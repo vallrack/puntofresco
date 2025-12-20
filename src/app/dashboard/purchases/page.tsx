@@ -105,60 +105,62 @@ export default function PurchasesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead>ID Compra</TableHead>
-                <TableHead>Proveedor</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading && (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
-                    Cargando compras...
-                  </TableCell>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>ID Compra</TableHead>
+                  <TableHead>Proveedor</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
-              )}
-              {!loading && filteredPurchases.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center">
-                    No se encontraron compras.
-                  </TableCell>
-                </TableRow>
-              )}
-              {!loading &&
-                filteredPurchases.map((purchase) => {
-                  const purchaseDate = purchase.fecha?.toDate ? purchase.fecha.toDate() : null;
-                  return (
-                    <TableRow key={purchase.id}>
-                      <TableCell className="font-medium">
-                        {purchaseDate ? (
-                          <div className="flex flex-col">
-                            <span>{format(purchaseDate, 'PPP', { locale: es })}</span>
-                            <span className="text-xs text-muted-foreground">{format(purchaseDate, 'p', { locale: es })}</span>
-                          </div>
-                        ) : 'Fecha inválida'}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{purchase.id}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{supplierMap.get(purchase.proveedorId) || 'Desconocido'}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-bold">${(purchase.total || 0).toFixed(2)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="icon" onClick={() => setSelectedPurchase(purchase)}>
-                            <Eye className="h-4 w-4" />
-                            <span className="sr-only">Ver Detalles</span>
-                          </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {loading && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">
+                      Cargando compras...
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!loading && filteredPurchases.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">
+                      No se encontraron compras.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!loading &&
+                  filteredPurchases.map((purchase) => {
+                    const purchaseDate = purchase.fecha?.toDate ? purchase.fecha.toDate() : null;
+                    return (
+                      <TableRow key={purchase.id}>
+                        <TableCell className="font-medium">
+                          {purchaseDate ? (
+                            <div className="flex flex-col">
+                              <span>{format(purchaseDate, 'PPP', { locale: es })}</span>
+                              <span className="text-xs text-muted-foreground">{format(purchaseDate, 'p', { locale: es })}</span>
+                            </div>
+                          ) : 'Fecha inválida'}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{purchase.id}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{supplierMap.get(purchase.proveedorId) || 'Desconocido'}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-bold">${(purchase.total || 0).toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="outline" size="icon" onClick={() => setSelectedPurchase(purchase)}>
+                              <Eye className="h-4 w-4" />
+                              <span className="sr-only">Ver Detalles</span>
+                            </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
       

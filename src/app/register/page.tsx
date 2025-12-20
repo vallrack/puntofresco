@@ -24,8 +24,8 @@ import AnimatedBackground from '@/components/animated-background';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createUser } from '@/lib/users';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 
 const registerSchema = z.object({
@@ -40,7 +40,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { auth } = initializeFirebase();
+  const { auth, firestore } = initializeFirebase();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -54,13 +54,23 @@ export default function RegisterPage() {
 
   const onSubmit = async (values: RegisterFormValues) => {
     try {
-      // Con las nuevas reglas, el registro público solo crea la cuenta en Auth.
-      // El documento en Firestore lo debe crear un super_admin.
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      // 1. Crear el usuario en Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // 2. Crear el documento del usuario en Firestore SIN rol.
+      // Las nuevas reglas de seguridad lo permiten.
+      const userDocRef = doc(firestore, 'usuarios', user.uid);
+      await setDoc(userDocRef, {
+        nombre: values.nombre,
+        email: values.email,
+        telefono: values.telefono || '',
+        // MUY IMPORTANTE: No se establece el campo 'rol'
+      });
       
       toast({
-        title: '¡Pre-registro Exitoso!',
-        description: 'Tu cuenta de acceso ha sido creada. Un administrador debe asignarte un rol para que puedas ingresar.',
+        title: '¡Registro Exitoso!',
+        description: 'Tu cuenta ha sido creada. Un administrador necesita asignarte un rol para que puedas ingresar.',
       });
       router.push('/login');
 

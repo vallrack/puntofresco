@@ -114,9 +114,9 @@ export default function UsersPage() {
   const filteredUsers = useMemo(() => {
     if (!users) return [];
     return users.filter((user) =>
-        user.id !== currentUser?.uid && // Excluir al super_admin actual de la lista
+        user.id !== currentUser?.uid && 
         (user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         user.nombre?.toLowerCase().includes(searchTerm.toLowerCase()))
+         (user.nombre && user.nombre.toLowerCase().includes(searchTerm.toLowerCase())))
     );
   }, [users, searchTerm, currentUser]);
   
@@ -167,7 +167,7 @@ export default function UsersPage() {
   
   const openEditDialog = (user: AppUser) => {
     setSelectedUser(user);
-    editUserForm.setValue('rol', user.rol);
+    editUserForm.setValue('rol', user.rol || 'vendedor');
     setIsEditUserDialogOpen(true);
   };
   
@@ -271,9 +271,9 @@ export default function UsersPage() {
                       <TableCell>{user.telefono || '-'}</TableCell>
                       <TableCell>
                           <Badge 
-                              variant={user.rol === 'super_admin' ? 'default' : user.rol === 'admin' ? 'secondary' : 'outline'}
+                              variant={!user.rol ? 'destructive' : user.rol === 'super_admin' ? 'default' : user.rol === 'admin' ? 'secondary' : 'outline'}
                           >
-                              {user.rol}
+                              {user.rol || 'Sin Asignar'}
                           </Badge>
                       </TableCell>
                       {isSuperAdmin && (

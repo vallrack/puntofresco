@@ -38,18 +38,22 @@ service cloud.firestore {
     // --- REGLAS POR COLECCIÓN ---
 
     match /usuarios/{userId} {
-      // 1. Cualquiera puede leer su propio perfil, Super Admin lee todos.
+      // 1. Lectura: Super Admin lee todos. Usuarios autenticados leen su propio perfil.
       allow read: if isSuperAdmin() || (isAuthenticated() && isOwner(userId));
       
-      // 2. Creación: Solo Super Admin puede crear usuarios. La regla de registro público se movió.
-      allow create: if isSuperAdmin();
+      // 2. Creación: 
+      // - Un usuario recién registrado puede crear SU PROPIO documento.
+      // - RESTRICCIÓN: No puede asignarse un rol a sí mismo en la creación.
+      // - Un super_admin puede crear usuarios (usado en el dashboard).
+      allow create: if (isAuthenticated() && isOwner(userId) && !('rol' in request.resource.data)) || isSuperAdmin();
 
       // 3. Edición: 
-      // - El Super Admin puede cambiar TODO.
-      // - El usuario puede cambiar sus datos (nombre, foto), PERO NO su rol.
+      // - El Super Admin puede cambiar TODO (incluyendo roles).
+      // - El usuario puede cambiar sus datos, PERO NO su rol.
       allow update: if isSuperAdmin() || 
                      (isAuthenticated() && isOwner(userId) && request.resource.data.rol == resource.data.rol);
 
+      // 4. Borrado: Solo Super Admin puede borrar.
       allow delete: if isSuperAdmin();
     }
 

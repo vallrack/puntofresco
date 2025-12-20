@@ -41,8 +41,8 @@ export default function DashboardPage() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 ref={searchInputRef}
-                placeholder="Buscar por nombre o escanear código de barras..."
-                className="pl-12 h-14 text-lg"
+                placeholder="Buscar por nombre o escanear código..."
+                className="pl-12 h-14 text-base md:text-lg"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -53,12 +53,14 @@ export default function DashboardPage() {
 
           {!loading && products && (
             <Tabs defaultValue="all" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:flex lg:flex-wrap lg:w-auto">
-                <TabsTrigger value="all">Todos</TabsTrigger>
-                {categories.map(category => (
-                  <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
-                ))}
-              </TabsList>
+              <div className="overflow-x-auto pb-2">
+                <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap md:w-auto">
+                  <TabsTrigger value="all">Todos</TabsTrigger>
+                  {categories.map(category => (
+                    <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
               
               <TabsContent value="all" className="mt-6">
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">

@@ -100,62 +100,64 @@ export default function SalesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead>ID Venta</TableHead>
-                {isAdmin && <TableHead>Vendedor</TableHead>}
-                <TableHead>Método de Pago</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading && (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 6 : 5} className="text-center">
-                    Cargando ventas...
-                  </TableCell>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>ID Venta</TableHead>
+                  {isAdmin && <TableHead>Vendedor</TableHead>}
+                  <TableHead>Método de Pago</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
-              )}
-              {!loading && filteredSales.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={isAdmin ? 6 : 5} className="text-center">
-                    No se encontraron ventas.
-                  </TableCell>
-                </TableRow>
-              )}
-              {!loading &&
-                filteredSales.map((sale) => {
-                  const saleDate = sale.fecha?.toDate ? sale.fecha.toDate() : null;
-                  return (
-                    <TableRow key={sale.id}>
-                      <TableCell className="font-medium">
-                        {saleDate ? (
-                          <div className="flex flex-col">
-                            <span>{format(saleDate, 'PPP', { locale: es })}</span>
-                            <span className="text-xs text-muted-foreground">{format(saleDate, 'p', { locale: es })}</span>
-                          </div>
-                        ) : 'Fecha inválida'}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{sale.id}</TableCell>
-                      {isAdmin && <TableCell>{userMap.get(sale.vendedorId) || 'Desconocido'}</TableCell>}
-                      <TableCell>
-                        <Badge variant="outline">{sale.metodoPago}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-bold">${sale.total.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="icon" onClick={() => setSelectedSale(sale)}>
-                            <Eye className="h-4 w-4" />
-                            <span className="sr-only">Ver Detalles</span>
-                          </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {loading && (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 6 : 5} className="text-center">
+                      Cargando ventas...
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!loading && filteredSales.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 6 : 5} className="text-center">
+                      No se encontraron ventas.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!loading &&
+                  filteredSales.map((sale) => {
+                    const saleDate = sale.fecha?.toDate ? sale.fecha.toDate() : null;
+                    return (
+                      <TableRow key={sale.id}>
+                        <TableCell className="font-medium">
+                          {saleDate ? (
+                            <div className="flex flex-col">
+                              <span>{format(saleDate, 'PPP', { locale: es })}</span>
+                              <span className="text-xs text-muted-foreground">{format(saleDate, 'p', { locale: es })}</span>
+                            </div>
+                          ) : 'Fecha inválida'}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{sale.id}</TableCell>
+                        {isAdmin && <TableCell>{userMap.get(sale.vendedorId) || 'Desconocido'}</TableCell>}
+                        <TableCell>
+                          <Badge variant="outline">{sale.metodoPago}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-bold">${sale.total.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="outline" size="icon" onClick={() => setSelectedSale(sale)}>
+                              <Eye className="h-4 w-4" />
+                              <span className="sr-only">Ver Detalles</span>
+                            </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

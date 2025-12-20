@@ -110,7 +110,7 @@ export default function Cart() {
           <CardHeader>
             <CardTitle>Venta Actual</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col flex-1 items-center justify-center text-center py-20 bg-card">
+          <CardContent className="flex flex-col flex-1 items-center justify-center text-center py-10 sm:py-20 bg-card">
             <ShoppingCart className="w-16 h-16 text-muted-foreground/50 mb-4" />
             <p className="font-semibold text-muted-foreground">El carrito está vacío</p>
             <p className="text-sm text-muted-foreground">Agrega productos para iniciar una venta.</p>
@@ -141,7 +141,7 @@ export default function Cart() {
             </Button>
         </CardHeader>
         <CardContent className="p-0 flex-1">
-          <ScrollArea className="h-[calc(100vh-480px)] lg:h-auto lg:max-h-[calc(100vh-480px)]">
+          <ScrollArea className="h-[calc(100vh-520px)] sm:h-[calc(100vh-480px)] lg:h-auto lg:max-h-[calc(100vh-480px)]">
             <div className="divide-y divide-border px-6">
               {items.map(item => (
                 <div key={item.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
@@ -189,7 +189,7 @@ export default function Cart() {
             <DialogTitle>Seleccionar Método de Pago</DialogTitle>
             <DialogDescription>El total de la venta es ${total().toFixed(2)}</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 gap-4 py-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-4">
             <Button size="lg" variant="outline" onClick={() => handlePayment('Efectivo')} disabled={isProcessing}>Efectivo</Button>
             <Button size="lg" variant="outline" onClick={() => handlePayment('Tarjeta')} disabled={isProcessing}>Tarjeta</Button>
             <Button size="lg" variant="outline" onClick={() => handlePayment('Transferencia')} disabled={isProcessing}>Transferencia</Button>

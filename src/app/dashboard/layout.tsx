@@ -10,7 +10,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
       <DashboardSidebar />
-      <SidebarInset className="bg-background">
+      <SidebarInset>
         <DashboardHeader />
         <div className="p-4 sm:p-6 lg:p-8">
           {children}

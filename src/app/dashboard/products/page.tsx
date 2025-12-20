@@ -201,15 +201,15 @@ export default function ProductsPage() {
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1">
               <CardTitle>Productos</CardTitle>
               <CardDescription>
                 Gestión de productos, categorías y stock.
               </CardDescription>
             </div>
             {isAdmin && (
-              <Button onClick={() => setIsDialogOpen(true)}>
+              <Button onClick={() => setIsDialogOpen(true)} className="w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Nuevo Producto
               </Button>
@@ -226,87 +226,89 @@ export default function ProductsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Imagen</TableHead>
-                <TableHead>Nombre</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Código QR</TableHead>
-                <TableHead>Precio Venta</TableHead>
-                <TableHead>Precio Compra</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Categoría</TableHead>
-                {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading && (
-                <TableRow>
-                  <TableCell colSpan={isAdmin ? 9 : 8} className="text-center">
-                    Cargando...
-                  </TableCell>
-                </TableRow>
-              )}
-              {!loading && filteredProducts?.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={isAdmin ? 9 : 8} className="text-center">
-                    No se encontraron productos.
-                  </TableCell>
-                </TableRow>
-              )}
-              {!loading && filteredProducts?.map((product) => (
-                <TableRow key={product.id}>
-                   <TableCell>
-                    <Image
-                      src={product.imageUrl}
-                      alt={product.nombre}
-                      width={40}
-                      height={40}
-                      className="rounded-md object-cover aspect-square"
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{product.nombre}</TableCell>
-                  <TableCell>{product.sku}</TableCell>
-                   <TableCell>
-                    <Button variant="outline" size="icon" onClick={() => openQRModal(product)}>
-                      <QrCode className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                  <TableCell>${product.precioVenta.toFixed(2)}</TableCell>
-                  <TableCell>${product.precioCompra.toFixed(2)}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell>{product.categoria}</TableCell>
-                  {isAdmin && (
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Abrir menú</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                           <DropdownMenuItem onClick={() => openLossDialog(product)}>
-                            <ArchiveX className="mr-2 h-4 w-4" />
-                            Registrar Merma
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+           <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Imagen</TableHead>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Código QR</TableHead>
+                    <TableHead>Precio Venta</TableHead>
+                    <TableHead>Precio Compra</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead>Categoría</TableHead>
+                    {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading && (
+                    <TableRow>
+                      <TableCell colSpan={isAdmin ? 9 : 8} className="text-center">
+                        Cargando...
+                      </TableCell>
+                    </TableRow>
                   )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  {!loading && filteredProducts?.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={isAdmin ? 9 : 8} className="text-center">
+                        No se encontraron productos.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {!loading && filteredProducts?.map((product) => (
+                    <TableRow key={product.id}>
+                       <TableCell>
+                        <Image
+                          src={product.imageUrl}
+                          alt={product.nombre}
+                          width={40}
+                          height={40}
+                          className="rounded-md object-cover aspect-square"
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{product.nombre}</TableCell>
+                      <TableCell>{product.sku}</TableCell>
+                       <TableCell>
+                        <Button variant="outline" size="icon" onClick={() => openQRModal(product)}>
+                          <QrCode className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                      <TableCell>${product.precioVenta.toFixed(2)}</TableCell>
+                      <TableCell>${product.precioCompra.toFixed(2)}</TableCell>
+                      <TableCell>{product.stock}</TableCell>
+                      <TableCell>{product.categoria}</TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Abrir menú</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar
+                              </DropdownMenuItem>
+                               <DropdownMenuItem onClick={() => openLossDialog(product)}>
+                                <ArchiveX className="mr-2 h-4 w-4" />
+                                Registrar Merma
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
         </CardContent>
       </Card>
       

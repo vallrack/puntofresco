@@ -5,17 +5,19 @@ import { ShoppingCartIcon } from 'lucide-react';
 import Cart from './cart';
 import { useCartStore } from '@/store/cart';
 import { Badge } from './ui/badge';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function MobileCartButton() {
-  const { items } = useCartStore();
+  const items = useCartStore(state => state.items);
   const [open, setOpen] = useState(false);
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
-  // Cierra el Sheet después de una venta exitosa (cuando el carrito se vacía)
-  if (items.length === 0 && open) {
-    setOpen(false);
-  }
+  useEffect(() => {
+    // Cierra el Sheet después de una venta exitosa (cuando el carrito se vacía)
+    if (items.length === 0 && open) {
+      setOpen(false);
+    }
+  }, [items, open]);
 
   return (
     <div className="lg:hidden fixed bottom-4 right-4 z-50">
@@ -34,7 +36,7 @@ export default function MobileCartButton() {
             <span className="sr-only">Abrir Carrito</span>
           </Button>
         </SheetTrigger>
-        <SheetContent className="w-full sm:max-w-md p-0 flex flex-col">
+        <SheetContent className="w-full sm:max-w-md p-0 flex flex-col" side="right">
            <SheetHeader className="p-6 pb-0">
             <SheetTitle>Venta Actual</SheetTitle>
           </SheetHeader>

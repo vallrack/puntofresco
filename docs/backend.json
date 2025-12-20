@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "usuario": {
+      "title": "Usuario",
+      "description": "Representa un usuario del sistema.",
+      "type": "object",
+      "properties": {
+        "rol": {
+          "type": "string",
+          "description": "Rol del usuario en el sistema.",
+          "enum": ["super_admin", "admin", "empleado"]
+        }
+      },
+      "required": ["rol"]
+    },
+    "producto": {
+      "title": "Producto",
+      "description": "Representa un producto en el inventario.",
+      "type": "object",
+      "properties": {
+        "nombre": {
+          "type": "string"
+        },
+        "precio": {
+          "type": "number"
+        },
+        "stock": {
+          "type": "number"
+        }
+      },
+      "required": ["nombre", "precio", "stock"]
+    },
+    "venta": {
+      "title": "Venta",
+      "description": "Representa una transacción de venta.",
+      "type": "object",
+      "properties": {}
+    },
+    "compra": {
+      "title": "Compra",
+      "description": "Representa una compra a un proveedor.",
+      "type": "object",
+      "properties": {}
+    },
+    "reporte_financiero": {
+      "title": "Reporte Financiero",
+      "description": "Representa un reporte financiero.",
+      "type": "object",
+      "properties": {}
+    }
+  },
+  "auth": {
+    "providers": ["password"]
+  },
+  "firestore": {
+    "/usuarios/{userId}": {
+      "schema": {
+        "$ref": "#/entities/usuario"
+      },
+      "description": "Perfiles de usuario y roles"
+    },
+    "/productos/{productoId}": {
+      "schema": {
+        "$ref": "#/entities/producto"
+      },
+      "description": "Productos del inventario"
+    },
+    "/ventas/{ventaId}": {
+      "schema": {
+        "$ref": "#/entities/venta"
+      },
+      "description": "Historial de ventas"
+    },
+    "/compras/{compraId}": {
+      "schema": {
+        "$ref": "#/entities/compra"
+      },
+      "description": "Registro de compras a proveedores"
+    },
+    "/reportes_financieros/{reporteId}": {
+      "schema": {
+        "$ref": "#/entities/reporte_financiero"
+      },
+      "description": "Reportes financieros"
+    }
+  }
+}

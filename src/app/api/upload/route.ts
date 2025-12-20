@@ -4,6 +4,11 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
 import { randomUUID } from 'crypto';
 
+// Verificar credenciales antes de inicializar
+if (!process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+  console.error('❌ Faltan las variables de entorno para las credenciales de Firebase Admin.');
+}
+
 // Inicializar Firebase Admin (solo una vez)
 if (!getApps().length) {
   try {
@@ -24,6 +29,13 @@ if (!getApps().length) {
 export async function POST(request: NextRequest) {
   console.log('📤 Recibida petición de upload');
   
+  if (!getApps().length) {
+    return NextResponse.json(
+      { error: 'Credenciales de servidor no configuradas correctamente.' },
+      { status: 500 }
+    );
+  }
+
   try {
     // Parsear FormData
     const formData = await request.formData();

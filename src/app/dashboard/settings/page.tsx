@@ -40,7 +40,6 @@ export default function SettingsPage() {
   const {
     data: userData,
     loading,
-    forceUpdate,
   } = useDoc<{ nombre: string; telefono?: string; email: string }>({
     path: 'usuarios',
     id: user?.uid,
@@ -87,7 +86,6 @@ export default function SettingsPage() {
         title: 'Éxito',
         description: 'Tu perfil ha sido actualizado.',
       });
-      forceUpdate(); // Re-fetch data
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({

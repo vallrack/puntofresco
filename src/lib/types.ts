@@ -63,3 +63,9 @@ export interface Purchase {
   items: PurchaseItem[];
   total: number;
 }
+
+export interface User {
+  id: string;
+  email: string;
+  rol: 'super_admin' | 'admin' | 'vendedor';
+}

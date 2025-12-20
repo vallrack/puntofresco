@@ -3,14 +3,17 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- FUNCIONES DE AYUDA ---
+    
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    // Obtenemos los datos del documento del usuario logueado
     function getUserData() {
       return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
     }
 
+    // Super Admin: Rol específico o el correo maestro de recuperación
     function isSuperAdmin() {
       return isAuthenticated() && (
         getUserData().rol == 'super_admin' || 
@@ -18,41 +21,78 @@ service cloud.firestore {
       );
     }
 
+    // Admin: Incluye administradores y super administradores
     function isAdmin() {
-      return isAuthenticated() && (getUserData().rol == 'admin' || isSuperAdmin());
+      return isAuthenticated() && (
+        getUserData().rol == 'admin' || 
+        isSuperAdmin()
+      );
     }
     
+    // Vendedor: Solo usuarios con ese rol
     function isVendedor() {
       return isAuthenticated() && getUserData().rol == 'vendedor';
     }
     
+    // Dueño: El UID del documento coincide con el del usuario autenticado
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
     // --- REGLAS POR COLECCIÓN ---
 
+    // 1. USUARIOS
     match /usuarios/{userId} {
+      // Lectura: Cualquier autenticado puede leer para ver nombres/emails en las tablas.
       allow read: if isAuthenticated();
+      
+      // Creación: 
+      // - Un usuario nuevo puede crear su documento PERO sin asignarse un rol (o rol vacío).
+      // - El Super Admin puede crear usuarios con cualquier rol desde el panel.
       allow create: if (isAuthenticated() && isOwner(userId) && !('rol' in request.resource.data)) || isSuperAdmin();
-      allow update: if isSuperAdmin() || (isAuthenticated() && isOwner(userId) && request.resource.data.rol == resource.data.rol);
+
+      // Edición: 
+      // - Super Admin cambia todo.
+      // - El usuario cambia su nombre/foto pero NO puede cambiar su propio 'rol'.
+      allow update: if isSuperAdmin() || (
+        isAuthenticated() && isOwner(userId) && request.resource.data.rol == resource.data.rol
+      );
+
       allow delete: if isSuperAdmin();
     }
 
-    match /productos/{productoId} {
-      allow read: if isAuthenticated();
-      allow create, delete: if isAdmin();
-      // Admins pueden editar todo. Vendedores pueden actualizar (para el stock en ventas).
-      allow update: if isAdmin() || isVendedor();
-    }
-
+    // 2. VENTAS (Optimizado para Cierre de Caja y Gráficos)
     match /ventas/{ventaId} {
-      allow get: if isAdmin() || (isVendedor() && resource.data.vendedorId == request.auth.uid);
-      allow list: if isAdmin() || (isVendedor() && request.query.where.vendedorId == request.auth.uid);
+      // Permitir 'get' (una venta) y 'list' (historial/gráficos)
+      // Si es vendedor, la consulta DEBE incluir el filtro de su propio UID.
+      allow get: if isAdmin() || (isAuthenticated() && resource.data.vendedorId == request.auth.uid);
+      allow list: if isAdmin() || (isAuthenticated() && request.query.where.vendedorId == request.auth.uid);
+      
+      // Crear: El vendedorId debe ser el del usuario que crea la venta
       allow create: if isAuthenticated() && request.resource.data.vendedorId == request.auth.uid;
+      
+      // Solo admins gestionan ediciones o borrados de tickets
       allow update, delete: if isAdmin();
     }
 
+    // 3. PRODUCTOS E INVENTARIO
+    match /productos/{productoId} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isAdmin();
+      // Vendedores pueden actualizar para descontar stock al vender
+      allow update: if isAdmin() || isVendedor();
+    }
+
+    // 4. MERMAS (Pérdidas/Danos)
+    match /mermas/{mermaId} {
+      allow get: if isAdmin() || (isVendedor() && resource.data.registradoPor == request.auth.uid);
+      allow list: if isAdmin() || (isVendedor() && request.query.where.registradoPor == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update, delete: if isSuperAdmin(); // Solo el jefe limpia el historial de mermas
+    }
+
+    // 5. COMPRAS, FINANZAS Y REPORTES GLOBALES
+    // Totalmente restringido para vendedores
     match /compras/{compraId} {
       allow read, write: if isAdmin();
     }
@@ -61,6 +101,7 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
     
+    // 6. CATEGORÍAS Y PROVEEDORES
     match /categorias/{categoriaId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
@@ -69,13 +110,6 @@ service cloud.firestore {
     match /proveedores/{proveedorId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
-    }
-
-    match /mermas/{mermaId} {
-      allow get: if isAdmin() || (isVendedor() && resource.data.registradoPor == request.auth.uid);
-      allow list: if isAdmin() || (isVendedor() && request.query.where.registradoPor == request.auth.uid);
-      allow create: if isAuthenticated();
-      allow update, delete: if false; 
     }
   }
 }

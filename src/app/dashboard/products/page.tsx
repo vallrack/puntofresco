@@ -135,7 +135,9 @@ export default function ProductsPage() {
     let imageUrl = '';
     try {
       const imageFile = values.image[0] as File;
-      imageUrl = await uploadImage(imageFile, `products/${user.uid}`);
+      const fileName = `${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const filePath = `products/${user.uid}/${fileName}`;
+      imageUrl = await uploadImage(imageFile, filePath);
     } catch (error: any) {
       console.error("Error al subir la imagen:", error);
       toast({ 

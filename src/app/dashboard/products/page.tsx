@@ -64,12 +64,12 @@ export default function ProductsPage() {
     }
 
     try {
-      console.log("1. Iniciando subida de imagen...");
+      console.log("onSubmit: 1. Iniciando subida de imagen...");
       const imageFile = values.image[0] as File;
       const imageUrl = await uploadImage(imageFile, `products/${user.uid}`);
-      console.log("2. Imagen subida con éxito:", imageUrl);
+      console.log("onSubmit: 2. Imagen subida con éxito:", imageUrl);
 
-      console.log("3. Creando producto en Firestore...");
+      console.log("onSubmit: 3. Creando producto en Firestore...");
       await addProduct({
         ...values,
         imageUrl: imageUrl,
@@ -77,18 +77,18 @@ export default function ProductsPage() {
         creadoPor: user.uid,
         actualizadoPor: user.uid,
       });
-      console.log("4. Producto creado con éxito.");
+      console.log("onSubmit: 4. Producto creado con éxito.");
 
       toast({ title: 'Éxito', description: 'El producto ha sido creado correctamente.' });
       form.reset();
       setImagePreview(null);
       setIsDialogOpen(false);
     } catch (error: any) {
-      console.error("Error completo en el proceso de creación:", error);
+      console.error("onSubmit: Error completo en el proceso de creación:", error);
       toast({ 
         variant: 'destructive', 
         title: 'Error al crear el producto', 
-        description: error.message || 'Ocurrió un error desconocido. Revisa la consola para más detalles.' 
+        description: `Error: ${error.message || 'Ocurrió un error desconocido.'}. Revisa la consola del navegador para más detalles.`
       });
     }
   };

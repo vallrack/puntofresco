@@ -20,6 +20,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import { ScrollArea } from "./ui/scroll-area"
 
 export default function Cart() {
   const { 
@@ -28,7 +29,6 @@ export default function Cart() {
     updateQuantity, 
     clearCart,
     subtotal, 
-    taxes, 
     total 
   } = useCartStore();
   
@@ -103,15 +103,14 @@ export default function Cart() {
     }
   };
 
-
   if (items.length === 0) {
     return (
        <>
-        <Card className="shadow-lg border-primary/20">
+        <Card className="shadow-lg border-primary/20 flex flex-col h-full">
           <CardHeader>
             <CardTitle>Venta Actual</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center text-center py-20 bg-card">
+          <CardContent className="flex flex-col flex-1 items-center justify-center text-center py-20 bg-card">
             <ShoppingCart className="w-16 h-16 text-muted-foreground/50 mb-4" />
             <p className="font-semibold text-muted-foreground">El carrito está vacío</p>
             <p className="text-sm text-muted-foreground">Agrega productos para iniciar una venta.</p>
@@ -130,7 +129,7 @@ export default function Cart() {
 
   return (
     <>
-      <Card className="shadow-lg border-primary/20">
+      <Card className="shadow-lg border-primary/20 flex flex-col h-full">
         <CardHeader className="flex flex-row items-center justify-between">
             <div>
                 <CardTitle>Venta Actual</CardTitle>
@@ -141,30 +140,32 @@ export default function Cart() {
                 <span className="sr-only">Limpiar Carrito</span>
             </Button>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="max-h-[calc(100vh-480px)] min-h-[150px] overflow-y-auto px-6 divide-y divide-border">
-            {items.map(item => (
-              <div key={item.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
-                <Image src={item.imageUrl} alt={item.nombre} width={48} height={48} className="rounded-md object-cover aspect-square" data-ai-hint={item.imageHint} />
-                <div className="flex-1 space-y-1">
-                  <p className="font-medium truncate text-sm">{item.nombre}</p>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)}><Minus className="h-3 w-3" /></Button>
-                    <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
-                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}><Plus className="h-3 w-3" /></Button>
+        <CardContent className="p-0 flex-1">
+          <ScrollArea className="h-[calc(100vh-480px)] lg:h-auto lg:max-h-[calc(100vh-480px)]">
+            <div className="divide-y divide-border px-6">
+              {items.map(item => (
+                <div key={item.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
+                  <Image src={item.imageUrl} alt={item.nombre} width={48} height={48} className="rounded-md object-cover aspect-square" data-ai-hint={item.imageHint} />
+                  <div className="flex-1 space-y-1">
+                    <p className="font-medium truncate text-sm">{item.nombre}</p>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)}><Minus className="h-3 w-3" /></Button>
+                      <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
+                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}><Plus className="h-3 w-3" /></Button>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-sm">${(item.precioVenta * item.quantity).toFixed(2)}</p>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive mt-1 -mr-2" onClick={() => removeFromCart(item.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-sm">${(item.precioVenta * item.quantity).toFixed(2)}</p>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive mt-1 -mr-2" onClick={() => removeFromCart(item.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         </CardContent>
-        <CardFooter className="flex flex-col p-6 space-y-4 bg-muted/50">
+        <CardFooter className="flex flex-col p-6 space-y-4 bg-muted/50 mt-auto">
           <div className="w-full space-y-2 text-sm">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal</span>

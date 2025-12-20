@@ -17,10 +17,17 @@
         "rol": {
           "type": "string",
           "description": "Rol del usuario en el sistema.",
-          "enum": ["super_admin", "admin", "vendedor"]
+          "enum": [
+            "super_admin",
+            "admin",
+            "vendedor"
+          ]
         }
       },
-      "required": ["email", "rol"]
+      "required": [
+        "email",
+        "rol"
+      ]
     },
     "producto": {
       "title": "Producto",
@@ -35,15 +42,48 @@
         },
         "stock": {
           "type": "number"
+        },
+        "creadoPor": {
+          "type": "string",
+          "description": "ID del usuario que creó el producto."
+        },
+        "actualizadoPor": {
+          "type": "string",
+          "description": "ID del usuario que realizó la última actualización."
+        },
+        "fechaCreacion": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha de creación del producto."
+        },
+        "fechaActualizacion": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha de la última actualización."
         }
       },
-      "required": ["nombre", "precio", "stock"]
+      "required": [
+        "nombre",
+        "precio",
+        "stock"
+      ]
     },
     "venta": {
       "title": "Venta",
       "description": "Representa una transacción de venta.",
       "type": "object",
-      "properties": {}
+      "properties": {
+        "vendedorId": {
+          "type": "string",
+          "description": "ID del usuario que realizó la venta."
+        },
+        "fecha": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha y hora de la venta."
+        }
+      },
+       "required": ["vendedorId", "fecha"]
     },
     "compra": {
       "title": "Compra",
@@ -59,7 +99,9 @@
     }
   },
   "auth": {
-    "providers": ["email"]
+    "providers": [
+      "email"
+    ]
   },
   "firestore": {
     "/usuarios/{userId}": {

@@ -11,6 +11,7 @@ service cloud.firestore {
 
     // Obtiene el rol del usuario actual desde la colección 'usuarios'
     function getRole() {
+      // Si el documento no existe, no se puede obtener el rol.
       return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol;
     }
 
@@ -25,11 +26,14 @@ service cloud.firestore {
 
     // --- REGLAS POR COLECCIÓN ---
 
-    // Colección de Usuarios: Solo el Super Admin puede crear/editar Admins. 
-    // Los usuarios pueden leer su propio perfil.
+    // Colección de Usuarios: 
+    // - Un usuario puede leer su propio perfil.
+    // - Un usuario autenticado puede crear su propio perfil.
+    // - Solo un Super Admin puede actualizar o eliminar perfiles.
     match /usuarios/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow create, update, delete: if isSuperAdmin();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update, delete: if isSuperAdmin();
     }
 
     // Colección de Productos e Inventario

@@ -214,6 +214,7 @@ export default function ProductsPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Imagen</TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>SKU</TableHead>
                 <TableHead>Código QR</TableHead>
@@ -227,20 +228,29 @@ export default function ProductsPage() {
             <TableBody>
               {loading && (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center">
+                  <TableCell colSpan={isAdmin ? 9 : 8} className="text-center">
                     Cargando...
                   </TableCell>
                 </TableRow>
               )}
               {!loading && filteredProducts?.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center">
+                  <TableCell colSpan={isAdmin ? 9 : 8} className="text-center">
                     No se encontraron productos.
                   </TableCell>
                 </TableRow>
               )}
               {!loading && filteredProducts?.map((product) => (
                 <TableRow key={product.id}>
+                   <TableCell>
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.nombre}
+                      width={40}
+                      height={40}
+                      className="rounded-md object-cover aspect-square"
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">{product.nombre}</TableCell>
                   <TableCell>{product.sku}</TableCell>
                    <TableCell>

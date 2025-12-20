@@ -34,9 +34,9 @@ export async function processSale(firestore: Firestore, saleData: Sale): Promise
           throw new Error(`El producto "${item.nombre}" no existe.`);
         }
 
-        const newStock = productDoc.data().stock - item.quantity;
-        if (newStock < 0) {
-          throw new Error(`Stock insuficiente para "${item.nombre}".`);
+        const currentStock = productDoc.data().stock;
+        if (currentStock < item.quantity) {
+          throw new Error(`Stock insuficiente para "${item.nombre}". Solo quedan ${currentStock}.`);
         }
       }
 

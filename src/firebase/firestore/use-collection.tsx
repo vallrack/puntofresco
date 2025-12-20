@@ -35,12 +35,11 @@ export function useCollection<T extends DocumentData>({
 
   const fetchData = useCallback(() => {
      if (userLoading) {
-      // Don't fetch if the user state is not yet determined
+      setLoading(true);
       return;
     }
 
     if (!user) {
-      // If there is no user, clear data and stop loading
       setData(null);
       setLoading(false);
       return;
@@ -49,7 +48,8 @@ export function useCollection<T extends DocumentData>({
     // If there's a query but the value is undefined, it means we are waiting
     // for a dependency (like user.uid), so we don't execute the query yet.
     if (queryParams && queryParams[2] === undefined) {
-      setLoading(false);
+      // Don't set loading to false here, wait for the real query
+      setLoading(true);
       return;
     }
 

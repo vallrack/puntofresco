@@ -1,52 +1,23 @@
 // app/api/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getStorage } from 'firebase-admin/storage';
+import { getAdminStorage } from '@/lib/firebase-admin';
 import { randomUUID } from 'crypto';
 
-// Verificar credenciales antes de inicializar
-if (!process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-  console.error('❌ Faltan las variables de entorno para las credenciales de Firebase Admin.');
-}
-
-// Inicializar Firebase Admin (solo una vez)
-if (!getApps().length) {
-  try {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    });
-    console.log('Firebase Admin inicializado correctamente');
-  } catch (error: any) {
-    console.error('Error inicializando Firebase Admin:', error.message);
-  }
-}
-
 export async function POST(request: NextRequest) {
-  console.log('📤 Recibida petición de upload');
-  
-  if (!getApps().length) {
-    return NextResponse.json(
-      { error: 'Credenciales de servidor no configuradas correctamente.' },
-      { status: 500 }
-    );
-  }
+  console.log('📤 API /upload - Petición recibida');
 
   try {
     // Parsear FormData
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const userId = formData.get('userId') as string;
-    
+
     console.log('📦 Datos recibidos:', {
+      hasFile: !!file,
       fileName: file?.name,
       fileSize: file?.size,
       fileType: file?.type,
-      userId
+      userId,
     });
 
     // Validaciones
@@ -84,15 +55,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ Validaciones pasadas, iniciando subida...');
+    console.log('✅ Validaciones pasadas');
 
     // Convertir File a Buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    console.log('✅ Buffer creado:', buffer.length, 'bytes');
 
-    // Obtener Storage bucket
-    const storage = getStorage();
+    // Obtener Storage
+    console.log('📁 Obteniendo Storage...');
+    const storage = getAdminStorage();
     const bucket = storage.bucket();
+    console.log('✅ Bucket obtenido:', bucket.name);
 
     // Crear nombre único
     const timestamp = Date.now();
@@ -100,14 +74,13 @@ export async function POST(request: NextRequest) {
     const fileName = `${timestamp}-${safeName}`;
     const filePath = `products/${userId}/${fileName}`;
 
-    console.log('📁 Subiendo a:', filePath);
+    console.log('📤 Subiendo archivo a:', filePath);
 
-    // Crear referencia y subir
+    // Subir archivo
     const fileRef = bucket.file(filePath);
-    
+
     await fileRef.save(buffer, {
       contentType: file.type,
-      // Para generar URL pública firmada, se necesita un token.
       metadata: {
         metadata: {
           firebaseStorageDownloadTokens: randomUUID(),
@@ -115,36 +88,33 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('✅ Archivo subido.');
+    console.log('✅ Archivo subido exitosamente');
 
-    // Obtener URL firmada
-    const [publicUrl] = await fileRef.getSignedUrl({
+    // Construir la URL firmada para acceso
+    const [signedUrl] = await fileRef.getSignedUrl({
         action: 'read',
         expires: '01-01-2500', // Una fecha de expiración muy lejana
     });
 
-    console.log('✅ URL firmada generada:', publicUrl);
+    console.log('✅ Upload completado:', signedUrl);
 
-    return NextResponse.json({ 
-      url: publicUrl,
-      message: 'Imagen subida exitosamente' 
+    return NextResponse.json({
+      url: signedUrl,
+      message: 'Imagen subida exitosamente',
+    });
+  } catch (error: any) {
+    console.error('❌ Error en API /upload:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
     });
 
-  } catch (error: any) {
-    console.error('❌ Error en el endpoint /api/upload:', error);
     return NextResponse.json(
-      { 
-        error: error.message || 'Error interno del servidor al subir la imagen',
-        details: error.stack 
+      {
+        error: error.message || 'Error al subir la imagen',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       },
       { status: 500 }
     );
   }
 }
-
-// Configuración de Next.js para permitir el parseo de FormData
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

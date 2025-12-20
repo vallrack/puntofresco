@@ -60,9 +60,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { createUser, createUserDocument } from '@/lib/users';
+import { createUser } from '@/lib/users';
 import { Badge } from '@/components/ui/badge';
-import { doc, updateDoc, deleteDoc, getDocs, collection, query, where } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 
 const userSchema = z.object({
@@ -119,6 +119,7 @@ export default function UsersPage() {
       toast({ title: 'Éxito', description: 'Usuario creado correctamente.' });
       forceUpdate();
       setIsNewUserDialogOpen(false);
+      newUserForm.reset();
     } catch (error: any) {
         let description = 'Ocurrió un error inesperado al crear el usuario.';
         if (error.code === 'auth/email-already-in-use') {
@@ -417,7 +418,7 @@ export default function UsersPage() {
             <DialogTitle>¿Estás seguro?</DialogTitle>
             <DialogDescription>
               Esta acción no se puede deshacer. Se eliminará el perfil de Firestore para <strong className="break-all">{selectedUser?.email}</strong>. El usuario no podrá iniciar sesión.
-            </DialogDescription>
+            </d-dialog-description>
           </DialogHeader>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setIsDeleteUserDialogOpen(false)}>Cancelar</Button>

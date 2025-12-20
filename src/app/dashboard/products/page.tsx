@@ -54,7 +54,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { addProduct } from "@/lib/products";
-import { uploadImage } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { v4 as uuidv4 } from 'uuid';
@@ -68,7 +67,8 @@ const productSchema = z.object({
   precioVenta: z.coerce.number().min(0, "El precio no puede ser negativo."),
   stock: z.coerce.number().int("El stock debe ser un número entero."),
   stockMinimo: z.coerce.number().int("El stock mínimo debe ser un número entero."),
-  image: z.any().refine(files => files?.length == 1, "La imagen es requerida."),
+  // Aceptaremos una cadena de texto (Base64)
+  imageUrl: z.string().min(1, "La imagen es requerida."),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -95,7 +95,7 @@ export default function ProductsPage() {
       precioVenta: 0,
       stock: 0,
       stockMinimo: 0,
-      image: undefined,
+      imageUrl: "",
     },
   });
 
@@ -116,13 +116,25 @@ export default function ProductsPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 700 * 1024) { // Límite de ~700KB para estar seguros con el 1MB de Firestore
+        toast({
+          variant: 'destructive',
+          title: 'Imagen demasiado grande',
+          description: 'Por favor, selecciona una imagen de menos de 700KB.'
+        });
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        const base64String = reader.result as string;
+        setImagePreview(base64String);
+        form.setValue('imageUrl', base64String); // Guardar Base64 en el formulario
+        form.clearErrors('imageUrl');
       };
       reader.readAsDataURL(file);
     } else {
       setImagePreview(null);
+      form.setValue('imageUrl', '');
     }
   };
 
@@ -132,27 +144,10 @@ export default function ProductsPage() {
       return;
     }
 
-    let imageUrl = '';
-    try {
-      const imageFile = values.image[0] as File;
-      const fileName = `${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      const filePath = `products/${user.uid}/${fileName}`;
-      imageUrl = await uploadImage(imageFile, filePath);
-    } catch (error: any) {
-      console.error("Error al subir la imagen:", error);
-      toast({ 
-        variant: 'destructive', 
-        title: 'Error al subir la imagen', 
-        description: error.message || 'No se pudo subir la imagen a Firebase Storage.' 
-      });
-      return; // Detener la ejecución si la imagen falla
-    }
-
     try {
       await addProduct({
         ...values,
-        imageUrl: imageUrl,
-        imageHint: "custom product",
+        imageHint: "custom product", // Mantenemos el hint por si se usa en el futuro
         creadoPor: user.uid,
         actualizadoPor: user.uid,
       });
@@ -412,10 +407,10 @@ export default function ProductsPage() {
                 </div>
               </div>
               <div className="space-y-4">
-                <FormField
+                 <FormField
                   control={form.control}
-                  name="image"
-                  render={({ field }) => (
+                  name="imageUrl"
+                  render={() => ( // No usamos 'field' directamente aquí
                     <FormItem>
                       <FormLabel>Imagen del Producto</FormLabel>
                       <FormControl>
@@ -424,15 +419,15 @@ export default function ProductsPage() {
                             type="file"
                             accept="image/png, image/jpeg"
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            onChange={(e) => {
-                              field.onChange(e.target.files);
-                              handleImageChange(e);
-                            }}
+                            onChange={handleImageChange}
                           />
                           <div className="border-2 border-dashed border-muted-foreground/50 rounded-md p-6 text-center cursor-pointer hover:border-primary">
                             <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
                             <p className="mt-2 text-sm text-muted-foreground">
                               Arrastra y suelta o haz clic para subir
+                            </p>
+                             <p className="mt-1 text-xs text-muted-foreground">
+                              Tamaño máx. ~700KB
                             </p>
                           </div>
                         </div>

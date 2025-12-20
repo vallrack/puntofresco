@@ -11,7 +11,7 @@ type NewProductData = {
   precioVenta: number;
   stock: number;
   stockMinimo: number;
-  imageUrl: string;
+  imageUrl: string; // Ahora es una cadena Base64
   imageHint: string;
   creadoPor: string;
   actualizadoPor: string;
@@ -30,6 +30,10 @@ export async function addProduct(productData: NewProductData) {
     return docRef;
   } catch (error) {
     console.error("Error en addProduct:", error);
+    // Si el error es por el tamaño del documento, damos un mensaje más claro
+    if (error instanceof Error && error.message.includes('exceeds the maximum size')) {
+      throw new Error('La imagen es demasiado grande. Por favor, utiliza una imagen más pequeña.');
+    }
     throw error;
   }
 }

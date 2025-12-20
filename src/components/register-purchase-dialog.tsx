@@ -118,7 +118,6 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
 
   const currentItems = form.watch('items');
   const total = useMemo(() => {
-    if (!currentItems) return 0;
     return currentItems.reduce((acc, item) => acc + (item.cantidad || 0) * (item.costoUnitario || 0), 0);
   }, [currentItems]);
 

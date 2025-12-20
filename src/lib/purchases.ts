@@ -34,7 +34,7 @@ export async function processPurchase(firestore: Firestore, purchaseData: Omit<P
       }
 
       // --- FASE DE ESCRITURA ---
-      // 1. Crear el nuevo documento de compra.
+      // 1. Crear el nuevo documento de compra, asegurando que el total esté incluido.
       transaction.set(purchaseRef, {
         ...purchaseData,
         fecha: serverTimestamp(),

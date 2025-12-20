@@ -5,11 +5,14 @@ import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useCollection } from '@/firebase';
 import type { Sale, Product, User as AppUser, Purchase, Merma as MermaType } from '@/lib/types';
-import { DollarSign, TrendingUp, TrendingDown, ArchiveX, Users, CreditCard, Banknote, Landmark } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, ArchiveX, Users, CreditCard, Banknote, Landmark, FileDown } from 'lucide-react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Line, LineChart, CartesianGrid } from 'recharts';
 import { addDays, format, startOfMonth } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { es } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 type UserData = { id: string; email: string; };
 
@@ -36,8 +39,13 @@ export default function ReportsPage() {
   const [salesByPaymentMethod, setSalesByPaymentMethod] = useState<{ name: string; total: number; }[]>([]);
   const [dailySales, setDailySales] = useState<{ date: string; ventas: number, ganancias: number }[]>([]);
 
+  const productMap = useMemo(() => {
+      if (!products) return new Map();
+      return new Map(products.map(p => [p.id, p]));
+  }, [products]);
+
   useEffect(() => {
-    if (!sales || !products || !dateRange?.from || !dateRange?.to) {
+    if (!sales || !dateRange?.from || !dateRange?.to) {
       return;
     }
     
@@ -59,13 +67,11 @@ export default function ReportsPage() {
       setFilteredMermas(fMermas);
     }
 
-  }, [sales, products, mermas, dateRange]);
+  }, [sales, mermas, dateRange]);
   
   useEffect(() => {
       if (loadingSales || loadingProducts || loadingMermas) return;
       if (!products || !users) return;
-
-      const productMap = new Map(products.map(p => [p.id, p]));
 
       // Calcular KPIs
       const totalRevenue = filteredSales.reduce((acc, sale) => acc + sale.total, 0);
@@ -125,8 +131,110 @@ export default function ReportsPage() {
         ...values
       })).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
 
-  }, [filteredSales, filteredMermas, products, users, loadingSales, loadingProducts, loadingMermas]);
+  }, [filteredSales, filteredMermas, products, users, loadingSales, loadingProducts, loadingMermas, productMap]);
   
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    const dateFrom = dateRange?.from ? format(dateRange.from, 'PPP', { locale: es }) : '';
+    const dateTo = dateRange?.to ? format(dateRange.to, 'PPP', { locale: es }) : '';
+
+    // Título
+    doc.setFontSize(18);
+    doc.text('Reporte Financiero - Punto Fresco', 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Período: ${dateFrom} - ${dateTo}`, 14, 30);
+    
+    // KPIs
+    doc.setFontSize(12);
+    doc.text('Resumen del Período', 14, 45);
+    autoTable(doc, {
+      startY: 50,
+      body: [
+        ['Ingresos Totales', `$${reportData.totalRevenue.toFixed(2)}`],
+        ['Costo de Mercancía', `$${reportData.totalCost.toFixed(2)}`],
+        ['Pérdidas (Merma)', `$${reportData.totalLoss.toFixed(2)}`],
+        ['Utilidad Neta', `$${reportData.netProfit.toFixed(2)}`],
+      ],
+      theme: 'grid',
+      styles: { fontStyle: 'bold' }
+    });
+
+    // Tabla de ventas
+    const salesData = filteredSales.map(sale => {
+       const saleCost = sale.items.reduce((acc, item) => {
+          const product = productMap.get(item.productId);
+          return acc + (product?.precioCompra || 0) * item.quantity;
+        }, 0);
+        const profit = sale.total - saleCost;
+        return [
+            sale.id,
+            format(sale.fecha.toDate(), 'Pp', { locale: es }),
+            sale.items.map(i => `${i.quantity}x ${i.nombre}`).join(', '),
+            `$${sale.total.toFixed(2)}`,
+            `$${profit.toFixed(2)}`,
+        ]
+    });
+    
+    autoTable(doc, {
+      head: [['ID Venta', 'Fecha', 'Productos', 'Total Venta', 'Ganancia']],
+      body: salesData,
+      startY: (doc as any).lastAutoTable.finalY + 15,
+      showHead: 'firstPage',
+    });
+
+    doc.save(`Reporte_PuntoFresco_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
+  const handleExportExcel = () => {
+    // Hoja 1: Resumen
+    const summaryData = [
+      { Métrica: 'Ingresos Totales', Valor: reportData.totalRevenue },
+      { Métrica: 'Costo de Mercancía', Valor: reportData.totalCost },
+      { Métrica: 'Pérdidas (Merma)', Valor: reportData.totalLoss },
+      { Métrica: 'Utilidad Neta', Valor: reportData.netProfit },
+    ];
+    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
+    summaryWorksheet['B1'].z = '$#,##0.00';
+    summaryWorksheet['B2'].z = '$#,##0.00';
+    summaryWorksheet['B3'].z = '$#,##0.00';
+    summaryWorksheet['B4'].z = '$#,##0.00';
+
+    // Hoja 2: Ventas Detalladas
+    const salesExportData = filteredSales.map(sale => {
+      const saleCost = sale.items.reduce((acc, item) => {
+        const product = productMap.get(item.productId);
+        return acc + (product?.precioCompra || 0) * item.quantity;
+      }, 0);
+      const profit = sale.total - saleCost;
+      return {
+        'ID Venta': sale.id,
+        'Fecha': format(sale.fecha.toDate(), 'yyyy-MM-dd HH:mm:ss'),
+        'Vendedor': users?.find(u => u.id === sale.vendedorId)?.email || 'Desconocido',
+        'Productos': sale.items.map(i => `${i.quantity}x ${i.nombre}`).join(', '),
+        'Método de Pago': sale.metodoPago,
+        'Total Venta': sale.total,
+        'Costo Total': saleCost,
+        'Ganancia': profit,
+      };
+    });
+    const salesWorksheet = XLSX.utils.json_to_sheet(salesExportData);
+     // Apply currency format
+    if(salesWorksheet['!ref']) {
+      const range = XLSX.utils.decode_range(salesWorksheet['!ref']);
+      for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+        ['F', 'G', 'H'].forEach(col => {
+            const cell_address = XLSX.utils.encode_cell({c: XLSX.utils.decode_col(col), r: R});
+            if(salesWorksheet[cell_address]) salesWorksheet[cell_address].z = '$#,##0.00';
+        })
+      }
+    }
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Resumen');
+    XLSX.utils.book_append_sheet(workbook, salesWorksheet, 'Ventas Detalladas');
+
+    XLSX.writeFile(workbook, `Reporte_PuntoFresco_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+  };
 
   const loading = loadingSales || loadingProducts || loadingUsers || loadingMermas;
 
@@ -141,7 +249,11 @@ export default function ReportsPage() {
                   Análisis de ganancias, pérdidas y rendimiento del negocio.
                 </CardDescription>
               </div>
-              <DateRangePicker range={dateRange} onRangeChange={setDateRange} />
+              <div className='flex items-center gap-2 flex-wrap'>
+                <DateRangePicker range={dateRange} onRangeChange={setDateRange} />
+                <Button variant="outline" onClick={handleExportPDF} disabled={loading}><FileDown className="mr-2 h-4 w-4" /> PDF</Button>
+                <Button variant="outline" onClick={handleExportExcel} disabled={loading}><FileDown className="mr-2 h-4 w-4" /> Excel</Button>
+              </div>
           </div>
         </CardHeader>
       </Card>

@@ -24,8 +24,9 @@ import { Button } from '@/components/ui/button';
 import { Banknote, CreditCard, Landmark, DollarSign, Printer, CheckCircle2 } from 'lucide-react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 
-function isValidDate(d: any) {
-  return d instanceof Date && !isNaN(d.getTime());
+function getSaleDate(sale: Sale): Date {
+  // Maneja de forma segura Timestamps de Firestore y otros formatos de fecha
+  return sale.fecha?.toDate ? sale.fecha.toDate() : new Date(sale.fecha);
 }
 
 export default function MySessionPage() {
@@ -50,12 +51,12 @@ export default function MySessionPage() {
 
     return sales
       .filter((sale) => {
-        const saleDate = sale.fecha?.toDate ? sale.fecha.toDate() : new Date(sale.fecha);
+        const saleDate = getSaleDate(sale);
         return saleDate >= start && saleDate <= end;
       })
       .sort((a, b) => {
-          const dateA = a.fecha?.toDate ? a.fecha.toDate() : new Date(a.fecha);
-          const dateB = b.fecha?.toDate ? b.fecha.toDate() : new Date(b.fecha);
+          const dateA = getSaleDate(a);
+          const dateB = getSaleDate(b);
           return dateB.getTime() - dateA.getTime();
       });
   }, [sales]);
@@ -82,10 +83,6 @@ export default function MySessionPage() {
   const handlePrint = () => {
     window.print();
   };
-
-  const getSaleDate = (sale: Sale): Date => {
-      return sale.fecha?.toDate ? sale.fecha.toDate() : new Date(sale.fecha);
-  }
 
   const loading = userLoading || loadingSales;
 

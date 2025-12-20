@@ -23,8 +23,7 @@ interface ReceiptModalProps {
 
 export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
-  const taxes = sale.total / 1.07 * 0.07;
-  const subtotal = sale.total - taxes;
+  const subtotal = sale.total; // El subtotal ahora es el total ya que no hay impuestos
 
   // Convert Firestore Timestamp to JS Date if necessary
   const saleDate = sale.fecha?.toDate ? sale.fecha.toDate() : new Date(sale.fecha);
@@ -204,10 +203,6 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal:</span>
               <span className="font-medium text-foreground">${subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Impuestos (7%):</span>
-              <span className="font-medium text-foreground">${taxes.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-base font-bold mt-2">
               <span>Total:</span>

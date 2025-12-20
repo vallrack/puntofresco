@@ -170,10 +170,6 @@ export default function Cart() {
               <span>Subtotal</span>
               <span className="font-medium text-foreground">${subtotal().toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Impuestos (7%)</span>
-              <span className="font-medium text-foreground">${taxes().toFixed(2)}</span>
-            </div>
             <Separator className="my-2" />
             <div className="flex justify-between font-bold text-lg">
               <span>Total</span>

@@ -85,12 +85,12 @@ export const useCartStore = create<CartState>((set, get) => ({
     return items.reduce((acc, item) => acc + item.precioVenta * item.quantity, 0);
   },
   taxes: () => {
-    const subtotal = get().subtotal();
-    return subtotal * 0.07;
+    // Impuesto eliminado
+    return 0;
   },
   total: () => {
     const subtotal = get().subtotal();
-    const taxes = get().taxes();
-    return subtotal + taxes;
+    // El total es ahora igual al subtotal
+    return subtotal;
   },
 }));

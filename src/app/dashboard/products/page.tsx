@@ -132,10 +132,21 @@ export default function ProductsPage() {
       return;
     }
 
+    let imageUrl = '';
     try {
       const imageFile = values.image[0] as File;
-      const imageUrl = await uploadImage(imageFile, `products/${user.uid}`);
-      
+      imageUrl = await uploadImage(imageFile, `products/${user.uid}`);
+    } catch (error: any) {
+      console.error("Error al subir la imagen:", error);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Error al subir la imagen', 
+        description: error.message || 'No se pudo subir la imagen a Firebase Storage.' 
+      });
+      return; // Detener la ejecución si la imagen falla
+    }
+
+    try {
       await addProduct({
         ...values,
         imageUrl: imageUrl,
@@ -148,9 +159,13 @@ export default function ProductsPage() {
       form.reset();
       setImagePreview(null);
       setIsDialogOpen(false);
-    } catch (error) {
-      console.error(error);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo agregar el producto.' });
+    } catch (error: any) {
+      console.error("Error al agregar el producto:", error);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Error al guardar el producto', 
+        description: error.message || 'No se pudo guardar el producto en la base de datos.' 
+      });
     }
   };
 

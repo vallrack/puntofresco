@@ -9,10 +9,10 @@ export interface Product {
   precioVenta: number;
   stock: number;
   stockMinimo: number;
-  creadoPor?: string;
-  actualizadoPor?: string;
-  fechaCreacion?: any;
-  fechaActualizacion?: any;
+  creadoPor: string;
+  actualizadoPor: string;
+  fechaCreacion: any;
+  fechaActualizacion: any;
 }
 
 export interface CartItem extends Product {
@@ -31,3 +31,5 @@ export interface Sale {
   total: number;
   fecha: any;
 }
+
+    

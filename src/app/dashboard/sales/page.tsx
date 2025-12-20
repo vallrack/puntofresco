@@ -107,7 +107,7 @@ export default function SalesPage() {
                 <TableRow>
                   <TableHead>Fecha</TableHead>
                   <TableHead>ID Venta</TableHead>
-                  {isAdmin && <TableHead>Vendedor</TableHead>}
+                  <TableHead>Vendedor</TableHead>
                   <TableHead>Método de Pago</TableHead>
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
@@ -116,14 +116,14 @@ export default function SalesPage() {
               <TableBody>
                 {loading && (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 6 : 5} className="text-center">
+                    <TableCell colSpan={6} className="text-center">
                       Cargando ventas...
                     </TableCell>
                   </TableRow>
                 )}
                 {!loading && filteredSales.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 6 : 5} className="text-center">
+                    <TableCell colSpan={6} className="text-center">
                       No se encontraron ventas.
                     </TableCell>
                   </TableRow>
@@ -142,7 +142,7 @@ export default function SalesPage() {
                           ) : 'Fecha inválida'}
                         </TableCell>
                         <TableCell className="font-mono text-xs">{sale.id}</TableCell>
-                        {isAdmin && <TableCell>{userMap.get(sale.vendedorId) || 'Desconocido'}</TableCell>}
+                        <TableCell>{userMap.get(sale.vendedorId) || 'Desconocido'}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{sale.metodoPago}</Badge>
                         </TableCell>

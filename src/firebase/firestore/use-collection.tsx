@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 
 import { useFirestore } from '../provider';
+import { useUser } from '../auth/use-user';
 
 type CollectionOptions = {
   path: string;
@@ -28,16 +29,30 @@ export function useCollection<T extends DocumentData>({
   query: queryParams,
 }: CollectionOptions) {
   const firestore = useFirestore();
+  const { user, loading: userLoading } = useUser();
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (userLoading) {
+      // Still waiting for auth state
+      return;
+    }
+
+    if (!user) {
+      // User is not authenticated, don't fetch data
+      setData(null);
+      setLoading(false);
+      return;
+    }
+
     let q: Query;
+    const collectionRef = collection(firestore, path);
 
     if (queryParams) {
-      q = query(collection(firestore, path), where(...queryParams));
+      q = query(collectionRef, where(...queryParams));
     } else {
-      q = query(collection(firestore, path));
+      q = query(collectionRef);
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -47,10 +62,14 @@ export function useCollection<T extends DocumentData>({
       })) as T[];
       setData(data);
       setLoading(false);
+    }, (error) => {
+      console.error("Error fetching collection: ", error);
+      setData(null);
+      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [firestore, path, JSON.stringify(queryParams)]);
+  }, [firestore, path, user, userLoading, JSON.stringify(queryParams)]);
 
   return { data, loading };
 }

@@ -70,11 +70,14 @@ export default function LoginPage() {
         case 'auth/invalid-email':
           errorMessage = 'El formato del correo electrónico no es válido.';
           break;
-        case 'auth/configuration-not-found':
-          errorMessage = 'El método de inicio de sesión no está habilitado. Contacta al administrador.';
+        case 'auth/user-disabled':
+          errorMessage = 'Este usuario ha sido deshabilitado.';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Demasiados intentos de inicio de sesión. Inténtalo de nuevo más tarde.';
           break;
         default:
-          errorMessage = 'Ha ocurrido un problema inesperado. Por favor, inténtalo más tarde.';
+          errorMessage = err.message || 'Ha ocurrido un problema inesperado. Por favor, inténtalo más tarde.';
           break;
       }
       setError(errorMessage);

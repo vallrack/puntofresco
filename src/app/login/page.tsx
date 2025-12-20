@@ -13,14 +13,15 @@ import { Label } from '@/components/ui/label';
 import { ShoppingBasket } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { initializeFirebase } from '@/firebase';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('vallrack67@gmail.com');
+  const [password, setPassword] = useState('Agnusde9');
   const [error, setError] = useState('');
   const router = useRouter();
   const { toast } = useToast();
@@ -30,27 +31,50 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const { auth } = initializeFirebase();
-      await signInWithEmailAndPassword(auth, email, password);
+      const { auth, firestore } = initializeFirebase();
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Check if user document exists, if not create it
+      const userDocRef = doc(firestore, 'usuarios', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        // User document doesn't exist, create it.
+        // Assign 'super_admin' role if the email matches.
+        const userRole = email === 'vallrack67@gmail.com' ? 'super_admin' : 'empleado';
+        await setDoc(userDocRef, {
+          rol: userRole,
+          email: user.email,
+        });
+        toast({
+          title: 'Perfil creado',
+          description: `Tu perfil ha sido creado con el rol: ${userRole}.`,
+        });
+      }
+      
       toast({
         title: 'Inicio de sesión exitoso',
         description: 'Bienvenido de nuevo.',
       });
       router.push('/dashboard');
+
     } catch (err: any) {
       let errorMessage = 'Ocurrió un error al iniciar sesión.';
       switch (err.code) {
         case 'auth/user-not-found':
-          errorMessage = 'No se encontró un usuario con ese correo electrónico.';
-          break;
         case 'auth/wrong-password':
-          errorMessage = 'La contraseña es incorrecta.';
+        case 'auth/invalid-credential':
+          errorMessage = 'El correo electrónico o la contraseña son incorrectos.';
           break;
         case 'auth/invalid-email':
           errorMessage = 'El formato del correo electrónico no es válido.';
           break;
+        case 'auth/configuration-not-found':
+          errorMessage = 'El método de inicio de sesión no está habilitado. Contacta al administrador.';
+          break;
         default:
-          errorMessage = err.message;
+          errorMessage = 'Ha ocurrido un problema inesperado. Por favor, inténtalo más tarde.';
           break;
       }
       setError(errorMessage);

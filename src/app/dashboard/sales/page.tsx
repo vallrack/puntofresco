@@ -23,6 +23,7 @@ import type { Sale } from '@/lib/types';
 import { format } from 'date-fns';
 import ReceiptModal from '@/components/receipt-modal';
 import { es } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
 
 type UserData = {
   id: string;
@@ -62,8 +63,9 @@ export default function SalesPage() {
       const vendedorEmail = userMap.get(sale.vendedorId)?.toLowerCase() || '';
       const vendedorMatch = vendedorEmail.includes(searchTerm.toLowerCase());
       const dateMatch = format(sale.fecha.toDate(), 'dd/MM/yyyy').includes(searchTerm);
+      const paymentMethodMatch = sale.metodoPago?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      return saleIdMatch || vendedorMatch || dateMatch;
+      return saleIdMatch || vendedorMatch || dateMatch || paymentMethodMatch;
     });
   }, [sales, searchTerm, userMap]);
 
@@ -84,7 +86,7 @@ export default function SalesPage() {
           <div className="relative mt-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-              placeholder="Buscar por ID, vendedor o fecha (dd/mm/yyyy)..."
+              placeholder="Buscar por ID, vendedor, fecha o método de pago..."
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -98,6 +100,7 @@ export default function SalesPage() {
                 <TableHead>Fecha</TableHead>
                 <TableHead>ID Venta</TableHead>
                 <TableHead>Vendedor</TableHead>
+                <TableHead>Método de Pago</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -105,14 +108,14 @@ export default function SalesPage() {
             <TableBody>
               {loading && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
+                  <TableCell colSpan={6} className="text-center">
                     Cargando ventas...
                   </TableCell>
                 </TableRow>
               )}
               {!loading && filteredSales.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
+                  <TableCell colSpan={6} className="text-center">
                     No se encontraron ventas.
                   </TableCell>
                 </TableRow>
@@ -128,6 +131,9 @@ export default function SalesPage() {
                     </TableCell>
                     <TableCell className="font-mono text-xs">{sale.id}</TableCell>
                     <TableCell>{userMap.get(sale.vendedorId) || 'Desconocido'}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{sale.metodoPago}</Badge>
+                    </TableCell>
                     <TableCell className="text-right font-bold">${sale.total.toFixed(2)}</TableCell>
                     <TableCell className="text-right">
                        <Button variant="outline" size="icon" onClick={() => setSelectedSale(sale)}>

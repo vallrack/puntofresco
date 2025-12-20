@@ -19,6 +19,8 @@ export interface CartItem extends Product {
   quantity: number;
 }
 
+export type PaymentMethod = "Efectivo" | "Tarjeta" | "Transferencia";
+
 export interface Sale {
   id?: string;
   vendedorId: string;
@@ -30,6 +32,7 @@ export interface Sale {
   }[];
   total: number;
   fecha: any;
+  metodoPago: PaymentMethod;
 }
 
 export interface Category {

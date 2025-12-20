@@ -154,6 +154,10 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
               <span>Hora:</span>
               <span>{new Date(sale.fecha).toLocaleTimeString()}</span>
             </div>
+            <div className="details-row">
+              <span>Pagado con:</span>
+              <span>{sale.metodoPago}</span>
+            </div>
           </div>
           
           <div className="items my-4">

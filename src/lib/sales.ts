@@ -28,6 +28,7 @@ export async function processSale(firestore: Firestore, saleData: Sale): Promise
         items: saleData.items,
         total: saleData.total,
         fecha: serverTimestamp(),
+        metodoPago: saleData.metodoPago,
       });
 
       // 2. Update stock for each product in the sale

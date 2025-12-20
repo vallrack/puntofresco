@@ -9,8 +9,17 @@ import { useUser, useFirestore } from "@/firebase"
 import { processSale } from "@/lib/sales"
 import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
-import type { Sale } from "@/lib/types"
+import type { Sale, PaymentMethod } from "@/lib/types"
 import ReceiptModal from "./receipt-modal"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 export default function Cart() {
   const { 
@@ -28,8 +37,23 @@ export default function Cart() {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [completedSale, setCompletedSale] = useState<Sale | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
-  const handlePayment = async () => {
+  const handleOpenPaymentModal = () => {
+    if (items.length > 0) {
+      setIsPaymentModalOpen(true);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Carrito vacío",
+        description: "Agrega productos para iniciar una venta.",
+      });
+    }
+  }
+
+  const handlePayment = async (metodoPago: PaymentMethod) => {
+    setIsPaymentModalOpen(false);
+
     if (!user || !firestore) {
       toast({
         variant: "destructive",
@@ -50,13 +74,14 @@ export default function Cart() {
       })),
       total: total(),
       fecha: new Date(), // This will be replaced by serverTimestamp
+      metodoPago: metodoPago,
     };
 
     try {
       const saleId = await processSale(firestore, saleData);
       toast({
         title: "Venta completada",
-        description: "La venta se ha registrado correctamente.",
+        description: `Venta con ${metodoPago} registrada correctamente.`,
       });
       // Add id and use a valid date for the modal
       setCompletedSale({ ...saleData, id: saleId, fecha: new Date() });
@@ -150,11 +175,31 @@ export default function Cart() {
               <span>${total().toFixed(2)}</span>
             </div>
           </div>
-          <Button size="lg" className="w-full font-bold text-lg h-14" onClick={handlePayment} disabled={isProcessing}>
+          <Button size="lg" className="w-full font-bold text-lg h-14" onClick={handleOpenPaymentModal} disabled={isProcessing}>
              {isProcessing ? 'Procesando...' : `Pagar $${total().toFixed(2)}`}
           </Button>
         </CardFooter>
       </Card>
+      
+      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Seleccionar Método de Pago</DialogTitle>
+            <DialogDescription>El total de la venta es ${total().toFixed(2)}</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-4 py-4">
+            <Button size="lg" variant="outline" onClick={() => handlePayment('Efectivo')} disabled={isProcessing}>Efectivo</Button>
+            <Button size="lg" variant="outline" onClick={() => handlePayment('Tarjeta')} disabled={isProcessing}>Tarjeta</Button>
+            <Button size="lg" variant="outline" onClick={() => handlePayment('Transferencia')} disabled={isProcessing}>Transferencia</Button>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+                <Button type="button" variant="secondary">Cancelar</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       {completedSale && (
         <ReceiptModal
           sale={completedSale}

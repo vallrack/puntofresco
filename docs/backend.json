@@ -120,13 +120,19 @@
         },
         "total": {
           "type": "number"
+        },
+        "metodoPago": {
+          "type": "string",
+          "description": "Método utilizado para el pago de la venta.",
+          "enum": ["Efectivo", "Tarjeta", "Transferencia"]
         }
       },
       "required": [
         "vendedorId",
         "fecha",
         "items",
-        "total"
+        "total",
+        "metodoPago"
       ]
     },
     "compra": {

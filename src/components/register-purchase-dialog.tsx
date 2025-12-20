@@ -43,6 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useCollection } from '@/firebase';
@@ -116,8 +117,10 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
   };
 
   const total = useMemo(() => {
-    return fields.reduce((acc, item) => acc + item.cantidad * item.costoUnitario, 0);
-  }, [fields]);
+    const items = form.watch('items');
+    if (!items) return 0;
+    return items.reduce((acc, item) => acc + (item.cantidad || 0) * (item.costoUnitario || 0), 0);
+  }, [form.watch('items')]);
 
   const onSubmit = async (values: PurchaseFormValues) => {
     if (!firestore) {
@@ -274,7 +277,7 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
                     </CardContent>
                 </Card>
                  {form.formState.errors.items && (
-                    <p className="text-sm font-medium text-destructive">{form.formState.errors.items.message}</p>
+                    <p className="text-sm font-medium text-destructive">{typeof form.formState.errors.items === 'object' && 'message' in form.formState.errors.items ? form.formState.errors.items.message : ''}</p>
                  )}
             </div>
             

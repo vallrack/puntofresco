@@ -24,6 +24,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import RegisterPurchaseDialog from '@/components/register-purchase-dialog';
+import PurchaseDetailsDialog from '@/components/purchase-details-dialog';
 import { useToast } from '@/hooks/use-toast';
 
 export default function PurchasesPage() {
@@ -32,7 +33,8 @@ export default function PurchasesPage() {
   const { user } = useUser();
   const { data: userData } = useDoc<{ rol: string }>({ path: 'usuarios', id: user?.uid });
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
   const { toast } = useToast();
 
   const isAdmin = useMemo(() => userData?.rol === 'admin' || userData?.rol === 'super_admin', [userData]);
@@ -66,7 +68,7 @@ export default function PurchasesPage() {
   const loading = loadingPurchases || loadingSuppliers;
 
   const handlePurchaseRegistered = () => {
-    setIsDialogOpen(false);
+    setIsRegisterDialogOpen(false);
     forceUpdate(); // Force a re-fetch of the purchases data
     toast({
       title: "Éxito",
@@ -86,7 +88,7 @@ export default function PurchasesPage() {
               </CardDescription>
             </div>
             {isAdmin && (
-              <Button onClick={() => setIsDialogOpen(true)}>
+              <Button onClick={() => setIsRegisterDialogOpen(true)}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Registrar Compra
               </Button>
@@ -147,7 +149,7 @@ export default function PurchasesPage() {
                       </TableCell>
                       <TableCell className="text-right font-bold">${purchase.total.toFixed(2)}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="icon" onClick={() => alert(`Próximamente: Detalles de la compra: ${purchase.id}`)}>
+                        <Button variant="outline" size="icon" onClick={() => setSelectedPurchase(purchase)}>
                             <Eye className="h-4 w-4" />
                             <span className="sr-only">Ver Detalles</span>
                           </Button>
@@ -160,11 +162,20 @@ export default function PurchasesPage() {
         </CardContent>
       </Card>
       
-      {isDialogOpen && (
+      {isRegisterDialogOpen && (
         <RegisterPurchaseDialog 
-          isOpen={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
+          isOpen={isRegisterDialogOpen}
+          onClose={() => setIsRegisterDialogOpen(false)}
           onPurchaseRegistered={handlePurchaseRegistered}
+        />
+      )}
+
+      {selectedPurchase && (
+        <PurchaseDetailsDialog
+          isOpen={!!selectedPurchase}
+          onClose={() => setSelectedPurchase(null)}
+          purchase={selectedPurchase}
+          supplierName={supplierMap.get(selectedPurchase.proveedorId) || 'Desconocido'}
         />
       )}
     </>

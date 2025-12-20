@@ -35,9 +35,11 @@ export default function ReportsPage() {
 
   const { data: products, loading: loadingProducts } = useCollection<Product>({ path: 'productos' });
   const { data: users, loading: loadingUsers } = useCollection<UserData>({ path: 'usuarios' });
+  
+  // La consulta de mermas ahora depende del rol del usuario
   const { data: mermas, loading: loadingMermas } = useCollection<MermaType>({ 
     path: 'mermas',
-    query: !userLoading && !isAdmin ? ['registradoPor', '==', user?.uid] : undefined,
+    query: !userLoading && !isAdmin && user?.uid ? ['registradoPor', '==', user.uid] : undefined,
   });
 
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
@@ -59,6 +61,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     if (!sales || !dateRange?.from || !dateRange?.to) {
+      setFilteredSales([]);
       return;
     }
     
@@ -66,6 +69,7 @@ export default function ReportsPage() {
     toDate.setHours(23, 59, 59, 999);
 
     const fSales = sales.filter(sale => {
+      if (!sale.fecha?.toDate) return false;
       const saleDate = sale.fecha.toDate();
       return saleDate >= dateRange.from! && saleDate <= toDate;
     });
@@ -73,43 +77,55 @@ export default function ReportsPage() {
     
     if (mermas) {
       const fMermas = mermas.filter(merma => {
+        if (!merma.fecha?.toDate) return false;
         const mermaDate = merma.fecha.toDate();
         return mermaDate >= dateRange.from! && mermaDate <= toDate;
       });
       setFilteredMermas(fMermas);
+    } else {
+      setFilteredMermas([]);
     }
 
   }, [sales, mermas, dateRange]);
   
   useEffect(() => {
-      if (loadingSales || loadingProducts || loadingMermas || !products || !users) return;
+      if (loadingSales || loadingProducts || (isAdmin && loadingMermas) || (isAdmin && !users)) return;
 
       const totalRevenue = filteredSales.reduce((acc, sale) => acc + sale.total, 0);
-      const totalCost = filteredSales.reduce((acc, sale) => {
-          const saleCost = sale.items.reduce((itemAcc, item) => {
-              const product = productMap.get(item.productId);
-              return itemAcc + (product?.precioCompra || 0) * item.quantity;
-          }, 0);
-          return acc + saleCost;
-      }, 0);
-      
-      const totalLoss = filteredMermas.reduce((acc, merma) => {
-        const product = productMap.get(merma.productId);
-        return acc + (product?.precioCompra || 0) * merma.cantidad;
-      }, 0);
+      let totalCost = 0;
+      let totalLoss = 0;
+
+      if(isAdmin) {
+        totalCost = filteredSales.reduce((acc, sale) => {
+            const saleCost = sale.items.reduce((itemAcc, item) => {
+                const product = productMap.get(item.productId);
+                return itemAcc + (product?.precioCompra || 0) * item.quantity;
+            }, 0);
+            return acc + saleCost;
+        }, 0);
+        
+        totalLoss = filteredMermas.reduce((acc, merma) => {
+          const product = productMap.get(merma.productId);
+          return acc + (product?.precioCompra || 0) * merma.cantidad;
+        }, 0);
+      }
+
 
       const netProfit = totalRevenue - totalCost - totalLoss;
       
       setReportData({ totalRevenue, totalCost, totalLoss, netProfit });
 
-      const userMap = new Map(users.map(u => [u.id, u.email]));
-      const salesByUserData: { [key: string]: number } = filteredSales.reduce((acc, sale) => {
-        const userName = userMap.get(sale.vendedorId) || 'Desconocido';
-        acc[userName] = (acc[userName] || 0) + sale.total;
-        return acc;
-      }, {} as { [key: string]: number });
+      if (isAdmin && users) {
+        const userMap = new Map(users.map(u => [u.id, u.email]));
+        const salesByUserData: { [key: string]: number } = filteredSales.reduce((acc, sale) => {
+          const userName = userMap.get(sale.vendedorId) || 'Desconocido';
+          acc[userName] = (acc[userName] || 0) + sale.total;
+          return acc;
+        }, {} as { [key: string]: number });
 
-      setSalesByUser(Object.entries(salesByUserData).map(([name, total]) => ({ name, total })));
+        setSalesByUser(Object.entries(salesByUserData).map(([name, total]) => ({ name, total })));
+      }
+
 
       const salesByPaymentData = filteredSales.reduce((acc, sale) => {
         acc[sale.metodoPago] = (acc[sale.metodoPago] || 0) + sale.total;
@@ -138,7 +154,7 @@ export default function ReportsPage() {
         ...values
       })).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
 
-  }, [filteredSales, filteredMermas, products, users, loadingSales, loadingProducts, loadingMermas, productMap]);
+  }, [filteredSales, filteredMermas, products, users, isAdmin, loadingSales, loadingProducts, loadingMermas, productMap]);
   
   const handleExportPDF = () => {
     const doc = new jsPDF();
@@ -237,7 +253,7 @@ export default function ReportsPage() {
     XLSX.writeFile(workbook, `Reporte_PuntoFresco_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
-  const loading = userLoading || loadingSales || loadingProducts || loadingUsers || loadingMermas;
+  const loading = userLoading || loadingSales || (isAdmin && (loadingProducts || loadingUsers || loadingMermas));
 
   return (
     <div className="space-y-6">

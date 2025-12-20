@@ -38,22 +38,10 @@ service cloud.firestore {
     // --- REGLAS POR COLECCIÓN ---
 
     match /usuarios/{userId} {
-      // 1. Lectura: Super Admin lee todos. Usuarios autenticados leen su propio perfil.
-      allow read: if isSuperAdmin() || (isAuthenticated() && isOwner(userId));
-      
-      // 2. Creación: 
-      // - Un usuario recién registrado puede crear SU PROPIO documento.
-      // - RESTRICCIÓN: No puede asignarse un rol a sí mismo en la creación.
-      // - Un super_admin puede crear usuarios (usado en el dashboard).
+      allow read: if isAuthenticated();
       allow create: if (isAuthenticated() && isOwner(userId) && !('rol' in request.resource.data)) || isSuperAdmin();
-
-      // 3. Edición: 
-      // - El Super Admin puede cambiar TODO (incluyendo roles).
-      // - El usuario puede cambiar sus datos, PERO NO su rol.
       allow update: if isSuperAdmin() || 
                      (isAuthenticated() && isOwner(userId) && request.resource.data.rol == resource.data.rol);
-
-      // 4. Borrado: Solo Super Admin puede borrar.
       allow delete: if isSuperAdmin();
     }
 
@@ -65,13 +53,8 @@ service cloud.firestore {
     }
 
     match /ventas/{ventaId} {
-      // Admins/SuperAdmins pueden ver documentos individuales.
-      // Vendedores solo pueden ver sus propias ventas.
       allow get: if isAdmin() || (isVendedor() && resource.data.vendedorId == request.auth.uid);
-      // Los Admins pueden listar todo. Los vendedores solo pueden leer sus propias ventas.
-      // La seguridad de la consulta de lista se aplica en el código de la app.
-      allow list: if isAdmin();
-      // Cualquiera autenticado puede crear una venta si es para sí mismo.
+      allow list: if isAdmin() || (isVendedor() && request.query.where.vendedorId == request.auth.uid);
       allow create: if isAuthenticated() && request.resource.data.vendedorId == request.auth.uid;
       allow update, delete: if isAdmin();
     }
@@ -95,15 +78,9 @@ service cloud.firestore {
     }
 
     match /mermas/{mermaId} {
-      // Los Admins/SuperAdmins pueden obtener cualquier registro de merma.
-      // Los vendedores solo pueden obtener las mermas que ellos mismos registraron.
       allow get: if isAdmin() || (isVendedor() && resource.data.registradoPor == request.auth.uid);
-      // Los Admins pueden listar todas las mermas.
-      // La seguridad para que los vendedores solo listen sus mermas se aplica en el código de la app.
-      allow list: if isAdmin();
-      // Solo usuarios autenticados (vendedores/admins) pueden crear mermas.
+      allow list: if isAdmin() || (isVendedor() && request.query.where.registradoPor == request.auth.uid);
       allow create: if isAuthenticated();
-      // No se permite modificar ni borrar para mantener la integridad de los registros.
       allow update, delete: if false; 
     }
   }

@@ -6,10 +6,20 @@ import {
   serverTimestamp,
   type Firestore,
 } from 'firebase/firestore';
-import type { Purchase } from './types';
 
-// La data que llega no tiene 'id' ni 'fecha' porque se generan en el backend
-export async function processPurchase(firestore: Firestore, purchaseData: Omit<Purchase, 'id' | 'fecha' | 'compraId'>): Promise<string> {
+// Definimos un tipo para los datos que llegan a esta función
+type PurchaseData = {
+  proveedorId: string;
+  items: {
+    productId: string;
+    cantidad: number;
+    costoUnitario: number;
+  }[];
+  total: number;
+};
+
+
+export async function processPurchase(firestore: Firestore, purchaseData: PurchaseData): Promise<string> {
   if (!purchaseData.proveedorId) {
     throw new Error('ID de proveedor no válido.');
   }

@@ -88,11 +88,16 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
     },
   });
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'items',
     keyName: 'key',
   });
+  
+  const watchedItems = form.watch('items');
+  const total = useMemo(() => {
+    return watchedItems.reduce((acc, item) => acc + (item.cantidad || 0) * (item.costoUnitario || 0), 0);
+  }, [watchedItems]);
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
@@ -116,20 +121,16 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
     setProductSearchTerm('');
   };
 
-  const currentItems = form.watch('items');
-  const total = useMemo(() => {
-    return currentItems.reduce((acc, item) => acc + (item.cantidad || 0) * (item.costoUnitario || 0), 0);
-  }, [currentItems]);
-
   const onSubmit = async (values: PurchaseFormValues) => {
     if (!firestore) {
         toast({ variant: 'destructive', title: 'Error', description: 'No se pudo conectar a la base de datos.' });
         return;
     }
     const purchaseData = {
-        ...values,
-        total: total,
-    }
+      proveedorId: values.proveedorId,
+      items: values.items,
+      total: total,
+    };
     try {
         await processPurchase(firestore, purchaseData);
         onPurchaseRegistered();
@@ -243,9 +244,8 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
                                     </TableRow>
                                 ) : (
                                     fields.map((item, index) => {
-                                        const cantidad = form.watch(`items.${index}.cantidad`) || 0;
-                                        const costoUnitario = form.watch(`items.${index}.costoUnitario`) || 0;
-                                        const subtotal = cantidad * costoUnitario;
+                                        const itemValues = watchedItems[index];
+                                        const subtotal = (itemValues?.cantidad || 0) * (itemValues?.costoUnitario || 0);
                                         return (
                                             <TableRow key={item.key}>
                                                 <TableCell className="font-medium">{item.nombre}</TableCell>

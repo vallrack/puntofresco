@@ -147,7 +147,7 @@ export default function PurchasesPage() {
                       <TableCell>
                         <Badge variant="outline">{supplierMap.get(purchase.proveedorId) || 'Desconocido'}</Badge>
                       </TableCell>
-                      <TableCell className="text-right font-bold">${purchase.total.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-bold">${(purchase.total || 0).toFixed(2)}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="icon" onClick={() => setSelectedPurchase(purchase)}>
                             <Eye className="h-4 w-4" />

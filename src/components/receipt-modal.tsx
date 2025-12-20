@@ -35,87 +35,96 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
       const receiptHTML = receiptRef.current.innerHTML;
       const printStyles = `
         <style>
-          @page {
-            size: 7cm auto;
-            margin: 0.5cm;
-          }
-          body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            color: #1a202c;
-            line-height: 1.5;
-            -webkit-print-color-adjust: exact;
-          }
-          .receipt-container {
-             width: 100%;
-             margin: 0 auto;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 1rem;
-          }
-          .header svg {
-            margin: 0 auto;
-            width: 40px;
-            height: 40px;
-          }
-          .header h1 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin: 0.5rem 0 0;
-          }
-          .header p {
-            font-size: 0.75rem;
-            color: #718096;
-            margin: 0;
-          }
-          .details, .items, .totals {
-             font-size: 0.8rem;
-          }
-          .details {
-             border-top: 1px dashed #cbd5e0;
-             border-bottom: 1px dashed #cbd5e0;
-             padding: 0.5rem 0;
-             margin-bottom: 1rem;
-             display: flex;
-             flex-direction: column;
-             gap: 4px;
-          }
-          .details-row {
-            display: flex;
-            justify-content: space-between;
-          }
-          .item-row {
-            display: flex;
-            margin-bottom: 0.5rem;
-          }
-          .item-info {
-            flex-grow: 1;
-            margin-right: 0.5rem;
-          }
-          .item-info p {
-            margin: 0;
-          }
-          .item-name {
-            font-weight: 500;
-          }
-          .item-qty-price {
-            font-size: 0.75rem;
-            color: #4a5568;
-          }
-          .item-total {
-            font-weight: 500;
-            text-align: right;
-          }
-          .totals {
-            border-top: 1px dashed #cbd5e0;
-            padding-top: 1rem;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 1.5rem;
-            font-size: 0.75rem;
+          @media print {
+            @page {
+              size: 7cm auto;
+              margin: 0.2cm;
+            }
+            body {
+              font-family: 'sans-serif';
+              margin: 0;
+              padding: 0;
+              color: #000;
+              line-height: 1.4;
+              -webkit-print-color-adjust: exact;
+            }
+            .receipt-container {
+               width: 100%;
+               margin: 0 auto;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 0.5rem;
+            }
+            .header svg {
+              margin: 0 auto;
+              width: 32px;
+              height: 32px;
+            }
+            .header h1 {
+              font-size: 1rem;
+              font-weight: 700;
+              margin: 0.3rem 0 0;
+            }
+            .header p {
+              font-size: 0.65rem;
+              color: #333;
+              margin: 0;
+            }
+            .details, .items, .totals {
+               font-size: 0.7rem;
+            }
+            .details {
+               border-top: 1px dashed #555;
+               border-bottom: 1px dashed #555;
+               padding: 0.4rem 0;
+               margin-bottom: 0.5rem;
+               display: flex;
+               flex-direction: column;
+               gap: 2px;
+            }
+            .details-row {
+              display: flex;
+              justify-content: space-between;
+            }
+            .item-row {
+              display: flex;
+              margin-bottom: 0.25rem;
+            }
+            .item-info {
+              flex-grow: 1;
+              margin-right: 0.5rem;
+            }
+            .item-info p {
+              margin: 0;
+            }
+            .item-name {
+              font-weight: 500;
+            }
+            .item-qty-price {
+              font-size: 0.65rem;
+              color: #333;
+            }
+            .item-total {
+              font-weight: 500;
+              text-align: right;
+            }
+            .totals {
+              border-top: 1px dashed #555;
+              padding-top: 0.5rem;
+              margin-top: 0.5rem;
+            }
+             .totals .flex {
+                margin-bottom: 2px;
+             }
+            .totals .font-bold {
+                font-weight: 700;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 1rem;
+              font-size: 0.65rem;
+            }
           }
         </style>
       `;
@@ -144,30 +153,30 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-sm">
-        <div ref={receiptRef} className="p-4 pt-0">
+      <DialogContent className="sm:max-w-xs">
+        <div ref={receiptRef} className="p-2">
           <div className="header text-center mb-4">
             <ShoppingBasket className="mx-auto w-10 h-10 text-primary" />
-            <DialogTitle className="text-xl font-bold">Punto Fresco</DialogTitle>
+            <DialogTitle className="text-lg font-bold">Punto Fresco</DialogTitle>
             <p className="text-xs text-muted-foreground">
               Gracias por su compra
             </p>
           </div>
 
           <div className="details text-xs my-4 py-2 border-t border-b border-dashed">
-            <div className="details-row">
+            <div className="details-row flex justify-between">
               <span>Recibo N°:</span>
               <span>{sale.id?.substring(0, 6).toUpperCase()}</span>
             </div>
-            <div className="details-row">
+            <div className="details-row flex justify-between">
               <span>Fecha:</span>
               <span>{isValidDate(saleDate) ? format(saleDate, 'dd/MM/yyyy') : 'N/A'}</span>
             </div>
-            <div className="details-row">
+            <div className="details-row flex justify-between">
               <span>Hora:</span>
               <span>{isValidDate(saleDate) ? format(saleDate, 'p', { locale: es }) : 'N/A'}</span>
             </div>
-            <div className="details-row">
+            <div className="details-row flex justify-between">
               <span>Pagado con:</span>
               <span>{sale.metodoPago}</span>
             </div>
@@ -175,14 +184,14 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
           
           <div className="items my-4">
             {sale.items.map((item) => (
-              <div key={item.productId} className="item-row text-sm mb-2">
-                <div className="item-info">
-                  <p className="item-name">{item.nombre}</p>
-                  <p className="item-qty-price text-xs text-muted-foreground">
+              <div key={item.productId} className="item-row flex text-xs mb-2">
+                <div className="item-info flex-grow mr-2">
+                  <p className="item-name font-medium">{item.nombre}</p>
+                  <p className="item-qty-price text-muted-foreground">
                     {item.quantity} x ${item.precioVenta.toFixed(2)}
                   </p>
                 </div>
-                <p className="item-total font-medium">
+                <p className="item-total font-medium text-right">
                   ${(item.quantity * item.precioVenta).toFixed(2)}
                 </p>
               </div>
@@ -191,7 +200,7 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
           
           <Separator orientation="horizontal" className="my-2 border-dashed" />
 
-          <div className="totals space-y-1 text-sm pt-2">
+          <div className="totals space-y-1 text-xs pt-2">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal:</span>
               <span className="font-medium text-foreground">${subtotal.toFixed(2)}</span>
@@ -200,7 +209,7 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
               <span>Impuestos (7%):</span>
               <span className="font-medium text-foreground">${taxes.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-lg font-bold mt-2">
+            <div className="flex justify-between text-base font-bold mt-2">
               <span>Total:</span>
               <span>${sale.total.toFixed(2)}</span>
             </div>
@@ -210,7 +219,7 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
             <p>¡Vuelva pronto!</p>
           </div>
         </div>
-        <DialogFooter className="mt-4 flex-row justify-end gap-2">
+        <DialogFooter className="mt-4 flex-row justify-end gap-2 p-4 pt-0">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cerrar
           </Button>

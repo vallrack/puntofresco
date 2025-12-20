@@ -24,7 +24,7 @@ import {
   FolderKanban,
   LogOut,
   Building,
-  History,
+  ArchiveRestore,
 } from "lucide-react"
 import { useUser } from "@/firebase/auth/use-user"
 import { useDoc } from "@/firebase/firestore/use-doc"
@@ -124,8 +124,8 @@ export default function DashboardSidebar() {
           </SidebarMenuItem>
           {isVendedor && (
              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Mi Historial" isActive={isActive('/dashboard/history')}>
-                  <Link href="/dashboard/history"><History /><span>Mi Historial</span></Link>
+                <SidebarMenuButton asChild tooltip="Mi Cierre" isActive={isActive('/dashboard/my-session')}>
+                  <Link href="/dashboard/my-session"><ArchiveRestore /><span>Mi Cierre</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
           )}

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Search, Edit, Trash2, Upload, QrCode, RefreshCcw } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Search, Edit, Trash2, Upload, QrCode, RefreshCcw, ArchiveX } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +58,7 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { v4 as uuidv4 } from 'uuid';
 import ProductQRModal from "@/components/product-qr-modal";
+import { RegisterLossDialog } from "@/components/register-loss-dialog";
 
 const productSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido."),
@@ -74,7 +75,7 @@ const productSchema = z.object({
 type ProductFormValues = z.infer<typeof productSchema>;
 
 export default function ProductsPage() {
-  const { data: products, loading: loadingProducts } = useCollection<Product>({ path: "productos" });
+  const { data: products, loading: loadingProducts, forceUpdate } = useCollection<Product>({ path: "productos" });
   const { data: categories, loading: loadingCategories } = useCollection<Category>({ path: "categorias" });
   const [searchTerm, setSearchTerm] = useState("");
   const { user } = useUser();
@@ -83,6 +84,8 @@ export default function ProductsPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [selectedProductQR, setSelectedProductQR] = useState<Product | null>(null);
+  const [isLossDialogOpen, setIsLossDialogOpen] = useState(false);
+  const [selectedProductForLoss, setSelectedProductForLoss] = useState<Product | null>(null);
   const { toast } = useToast();
 
   const form = useForm<ProductFormValues>({
@@ -156,6 +159,7 @@ export default function ProductsPage() {
       form.reset();
       setImagePreview(null);
       setIsDialogOpen(false);
+      forceUpdate();
     } catch (error: any) {
       console.error("Error al agregar el producto:", error);
       toast({ 
@@ -178,6 +182,17 @@ export default function ProductsPage() {
     setSelectedProductQR(product);
     setIsQRModalOpen(true);
   }
+
+  const openLossDialog = (product: Product) => {
+    setSelectedProductForLoss(product);
+    setIsLossDialogOpen(true);
+  };
+  
+  const handleLossRegistered = () => {
+    forceUpdate();
+    setIsLossDialogOpen(false);
+  }
+
 
   const loading = loadingProducts || loadingCategories;
 
@@ -275,6 +290,10 @@ export default function ProductsPage() {
                           <DropdownMenuItem>
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
+                          </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => openLossDialog(product)}>
+                            <ArchiveX className="mr-2 h-4 w-4" />
+                            Registrar Merma
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" />
@@ -469,11 +488,21 @@ export default function ProductsPage() {
           </Form>
         </DialogContent>
       </Dialog>
+      
       {selectedProductQR && (
         <ProductQRModal
           product={selectedProductQR}
           isOpen={isQRModalOpen}
           onClose={() => setIsQRModalOpen(false)}
+        />
+      )}
+
+      {selectedProductForLoss && (
+        <RegisterLossDialog
+            product={selectedProductForLoss}
+            isOpen={isLossDialogOpen}
+            onClose={() => setIsLossDialogOpen(false)}
+            onLossRegistered={handleLossRegistered}
         />
       )}
     </>

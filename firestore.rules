@@ -67,5 +67,11 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
+
+    match /mermas/{mermaId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false; // No se permite actualizar ni eliminar mermas
+    }
   }
 }

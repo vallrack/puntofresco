@@ -69,3 +69,13 @@ export interface User {
   email: string;
   rol: 'super_admin' | 'admin' | 'vendedor';
 }
+
+export interface Merma {
+  id?: string;
+  productId: string;
+  productName: string;
+  cantidad: number;
+  motivo: string;
+  fecha: any;
+  registradoPor: string;
+}

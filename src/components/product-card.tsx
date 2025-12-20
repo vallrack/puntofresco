@@ -11,14 +11,14 @@ type ProductCardProps = {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const isLowStock = product.stock <= product.minStock;
+  const isLowStock = product.stock <= product.stockMinimo;
 
   return (
     <Card className="overflow-hidden group cursor-pointer relative shadow-md hover:shadow-lg transition-shadow duration-300">
       <div className="overflow-hidden">
         <Image
           src={product.imageUrl}
-          alt={product.name}
+          alt={product.nombre}
           width={400}
           height={300}
           className="aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-300"
@@ -35,10 +35,10 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       <CardContent className="p-3">
-        <h3 className="font-semibold truncate text-base">{product.name}</h3>
+        <h3 className="font-semibold truncate text-base">{product.nombre}</h3>
       </CardContent>
       <CardFooter className="p-3 pt-0">
-        <p className="text-lg font-bold w-full">${product.sellingPrice.toFixed(2)}</p>
+        <p className="text-lg font-bold w-full">${product.precioVenta.toFixed(2)}</p>
       </CardFooter>
       <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <Button variant="secondary" size="lg" className="font-semibold">

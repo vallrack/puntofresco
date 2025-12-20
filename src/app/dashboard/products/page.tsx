@@ -38,7 +38,7 @@ export default function ProductsPage() {
   const filteredProducts = useMemo(() => {
     return products?.filter(
       (product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.sku.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [products, searchTerm]);
@@ -100,12 +100,12 @@ export default function ProductsPage() {
             )}
             {!loading && filteredProducts?.map((product) => (
               <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.name}</TableCell>
+                <TableCell className="font-medium">{product.nombre}</TableCell>
                 <TableCell>{product.sku}</TableCell>
-                <TableCell>${product.sellingPrice.toFixed(2)}</TableCell>
-                <TableCell>${product.purchasePrice.toFixed(2)}</TableCell>
+                <TableCell>${product.precioVenta.toFixed(2)}</TableCell>
+                <TableCell>${product.precioCompra.toFixed(2)}</TableCell>
                 <TableCell>{product.stock}</TableCell>
-                <TableCell>{product.category}</TableCell>
+                <TableCell>{product.categoria}</TableCell>
                 {isAdmin && (
                   <TableCell className="text-right">
                     <DropdownMenu>

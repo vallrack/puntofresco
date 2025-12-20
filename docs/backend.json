@@ -41,11 +41,26 @@
           "type": "string",
           "description": "SKU o código de barras del producto."
         },
-        "precio": {
+        "precioCompra": {
+          "type": "number"
+        },
+        "precioVenta": {
           "type": "number"
         },
         "stock": {
           "type": "number"
+        },
+        "stockMinimo": {
+          "type": "number"
+        },
+        "categoria": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string"
+        },
+        "imageHint": {
+          "type": "string"
         },
         "creadoPor": {
           "type": "string",
@@ -69,7 +84,7 @@
       "required": [
         "nombre",
         "sku",
-        "precio",
+        "precioVenta",
         "stock"
       ]
     },

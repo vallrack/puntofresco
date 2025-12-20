@@ -13,11 +13,11 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredProducts = products?.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.sku.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const categories = products ? [...new Set(products.map(p => p.category))] : [];
+  const categories = products ? [...new Set(products.map(p => p.categoria))] : [];
 
   return (
     <div className="grid lg:grid-cols-[1fr_380px] gap-8 items-start">
@@ -52,7 +52,7 @@ export default function DashboardPage() {
           {categories.map(category => (
             <TabsContent key={category} value={category} className="mt-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredProducts.filter(p => p.category === category).map(product => <ProductCard key={product.id} product={product} />)}
+                {filteredProducts.filter(p => p.categoria === category).map(product => <ProductCard key={product.id} product={product} />)}
               </div>
             </TabsContent>
           ))}

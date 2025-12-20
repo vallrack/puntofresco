@@ -1,14 +1,14 @@
 export interface Product {
   id: string;
-  name: string;
+  nombre: string;
   sku: string;
   imageUrl: string;
   imageHint: string;
-  category: string;
-  purchasePrice: number;
-  sellingPrice: number;
+  categoria: string;
+  precioCompra: number;
+  precioVenta: number;
   stock: number;
-  minStock: number;
+  stockMinimo: number;
   creadoPor?: string;
   actualizadoPor?: string;
   fechaCreacion?: any;

@@ -1,3 +1,76 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "tomatoes",
+      "description": "Tomates Rojos Frescos",
+      "imageUrl": "https://images.unsplash.com/photo-1696087172662-65f7b09d614e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx0b21hdG9lcyUyMHByb2R1Y2V8ZW58MHx8fHwxNzY2MTg5NjgwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "tomatoes produce"
+    },
+    {
+      "id": "avocados",
+      "description": "Aguacates Maduros",
+      "imageUrl": "https://images.unsplash.com/photo-1619224699054-88ee8dc20ac2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhdm9jYWRvcyUyMGZydWl0fGVufDB8fHx8MTc2NjE0OTk5Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "avocados fruit"
+    },
+    {
+      "id": "lettuce",
+      "description": "Lechuga Verde Crujiente",
+      "imageUrl": "https://images.unsplash.com/photo-1646082270983-7c0636e13c66?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxsZXR0dWNlJTIwdmVnZXRhYmxlfGVufDB8fHx8MTc2NjE4OTY4MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "lettuce vegetable"
+    },
+    {
+      "id": "carrots",
+      "description": "Zanahorias Frescas",
+      "imageUrl": "https://images.unsplash.com/photo-1660255940824-b712b5b03caf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjYXJyb3RzJTIwdmVnZXRhYmxlfGVufDB8fHx8MTc2NjE4OTY4MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "carrots vegetable"
+    },
+    {
+      "id": "apples",
+      "description": "Manzanas Rojas y Verdes",
+      "imageUrl": "https://images.unsplash.com/photo-1653715782431-0eec1ffdefe2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhcHBsZXMlMjBmcnVpdHxlbnwwfHx8fDE3NjYxODk2ODB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "apples fruit"
+    },
+    {
+      "id": "bananas",
+      "description": "Plátanos Maduros",
+      "imageUrl": "https://images.unsplash.com/photo-1573828235229-fb27fdc8da91?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxiYW5hbmFzJTIwZnJ1aXR8ZW58MHx8fHwxNzY2MTg5NjgwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bananas fruit"
+    },
+    {
+      "id": "onions",
+      "description": "Cebollas Rojas y Amarillas",
+      "imageUrl": "https://images.unsplash.com/photo-1637057755212-e7d3798a74f5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxvbmlvbnMlMjB2ZWdldGFibGV8ZW58MHx8fHwxNzY2MTg5NjgwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "onions vegetable"
+    },
+    {
+      "id": "potatoes",
+      "description": "Patatas",
+      "imageUrl": "https://images.unsplash.com/photo-1599778149934-738198d1d279?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxwb3RhdG9lcyUyMHZlZ2V0YWJsZXxlbnwwfHx8fDE3NjYxODk2ODB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "potatoes vegetable"
+    },
+    {
+      "id": "strawberries",
+      "description": "Fresas Frescas",
+      "imageUrl": "https://images.unsplash.com/photo-1718787374521-ee712179d8c3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c3RyYXdiZXJyaWVzJTIwZnJ1aXR8ZW58MHx8fHwxNzY2MTg5NjgwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "strawberries fruit"
+    },
+    {
+      "id": "bell-peppers",
+      "description": "Pimientos de Colores",
+      "imageUrl": "https://images.unsplash.com/photo-1592801062201-04fd6cf3d5ed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxiZWxsJTIwcGVwcGVyc3xlbnwwfHx8fDE3NjYxODk2ODB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bell peppers"
+    },
+    {
+      "id": "broccoli",
+      "description": "Brócoli Fresco",
+      "imageUrl": "https://images.unsplash.com/photo-1685504445355-0e7bdf90d415?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxicm9jY29saSUyMHZlZ2V0YWJsZXxlbnwwfHx8fDE3NjYxODk2ODB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "broccoli vegetable"
+    },
+    {
+      "id": "grapes",
+      "description": "Uvas Verdes",
+      "imageUrl": "https://images.unsplash.com/photo-1633033983258-8343a24eb102?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxncmFwZXMlMjBmcnVpdHxlbnwwfHx8fDE3NjYxODk2ODB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "grapes fruit"
+    }
+  ]
 }

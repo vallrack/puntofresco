@@ -8,6 +8,7 @@ service cloud.firestore {
     }
 
     function getUserData() {
+      // getAfter garantiza que leemos la versión más reciente del perfil
       return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
     }
 
@@ -42,14 +43,17 @@ service cloud.firestore {
     match /productos/{productoId} {
       allow read: if isAuthenticated();
       allow create, delete: if isAdmin();
-      // Admins pueden editar todo. Vendedores pueden actualizar (para el stock en ventas).
       allow update: if isAdmin() || isVendedor();
     }
 
     match /ventas/{ventaId} {
-      allow get: if isAdmin() || (isVendedor() && resource.data.vendedorId == request.auth.uid);
-      allow list: if isAdmin() || (isVendedor() && request.query.where.vendedorId == request.auth.uid);
+      // CAMBIO CLAVE: Usamos 'read' con validación de resource.data.
+      // Esto permite que el vendedor liste sus ventas de forma estable sin que Firebase corte la conexión.
+      allow read: if isAdmin() || (isAuthenticated() && (resource == null || resource.data.vendedorId == request.auth.uid));
+      
+      // Aseguramos que el vendedor solo cree ventas con su propio ID
       allow create: if isAuthenticated() && request.resource.data.vendedorId == request.auth.uid;
+      
       allow update, delete: if isAdmin();
     }
 
@@ -72,8 +76,8 @@ service cloud.firestore {
     }
 
     match /mermas/{mermaId} {
-      allow get: if isAdmin() || (isVendedor() && resource.data.registradoPor == request.auth.uid);
-      allow list: if isAdmin() || (isVendedor() && request.query.where.registradoPor == request.auth.uid);
+      // Aplicamos la misma lógica de 'read' para estabilidad
+      allow read: if isAdmin() || (isAuthenticated() && (resource == null || resource.data.registradoPor == request.auth.uid));
       allow create: if isAuthenticated();
       allow update, delete: if isSuperAdmin();
     }

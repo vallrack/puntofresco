@@ -33,20 +33,37 @@ type UserData = {
 
 export default function SalesPage() {
   const { user, loading: userLoading } = useUser();
-  const { data: userData } = useDoc<{ rol: string }>({ path: 'usuarios', id: user?.uid });
-  const isAdmin = useMemo(() => userData?.rol === 'admin' || userData?.rol === 'super_admin', [userData]);
+  const { data: userData, loading: userDataLoading } = useDoc<{ rol: string }>({ path: 'usuarios', id: user?.uid });
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
-  // La consulta ahora depende del rol del usuario.
+  const salesQuery = useMemo(() => {
+    if (userLoading || userDataLoading) {
+      return undefined; // Espera a que la información del usuario esté lista
+    }
+    
+    const isAdmin = userData?.rol === 'admin' || userData?.rol === 'super_admin';
+
+    if (isAdmin) {
+      return undefined; // Los admins obtienen todas las ventas
+    }
+    
+    if (user?.uid) {
+      return ['vendedorId', '==', user.uid] as [string, '==', any]; // Los vendedores solo las suyas
+    }
+    
+    return []; // No hacer consulta si no hay user.uid y no es admin
+  }, [user, userLoading, userData, userDataLoading]);
+
+
   const { data: sales, loading: loadingSales } = useCollection<Sale>({
     path: 'ventas',
-    // Si el usuario no es admin y ya se ha cargado, filtramos las ventas para que solo vea las suyas.
-    query: !userLoading && !isAdmin && user?.uid ? ['vendedorId', '==', user.uid] : undefined,
+    query: salesQuery,
   });
   
   const { data: users, loading: loadingUsers } = useCollection<UserData>({ path: 'usuarios' });
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   
   const userMap = useMemo(() => {
     if (!users) return new Map();
@@ -76,7 +93,7 @@ export default function SalesPage() {
     });
   }, [sales, searchTerm, userMap]);
 
-  const loading = userLoading || loadingSales || loadingUsers;
+  const loading = userLoading || userDataLoading || loadingSales || loadingUsers;
 
   return (
     <>

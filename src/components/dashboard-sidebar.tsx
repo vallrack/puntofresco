@@ -22,15 +22,22 @@ import {
   Settings,
   ShoppingBasket,
   FolderKanban,
+  LogOut,
 } from "lucide-react"
 import { useUser } from "@/firebase/auth/use-user"
 import { useDoc } from "@/firebase/firestore/use-doc"
 import { useEffect, useState } from "react"
+import { getAuth, signOut } from "firebase/auth"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
+import { Button } from "./ui/button"
 
 export default function DashboardSidebar() {
   const pathname = usePathname()
   const { user } = useUser()
   const [userRole, setUserRole] = useState<string | null>(null);
+  const router = useRouter();
+  const { toast } = useToast();
 
   const { data: userData } = useDoc<{ rol: string }>({
     path: 'usuarios',
@@ -53,6 +60,24 @@ export default function DashboardSidebar() {
   
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   const isSuperAdmin = userRole === 'super_admin';
+
+  const handleLogout = async () => {
+    const auth = getAuth();
+    try {
+      await signOut(auth);
+      toast({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión correctamente.",
+      });
+      router.push('/login');
+    } catch (error) {
+       toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo cerrar la sesión.",
+      });
+    }
+  };
 
 
   return (
@@ -127,6 +152,11 @@ export default function DashboardSidebar() {
            <SidebarMenuItem>
              <SidebarMenuButton asChild tooltip="Configuración">
                <Link href="#"><Settings /><span>Configuración</span></Link>
+             </SidebarMenuButton>
+           </SidebarMenuItem>
+           <SidebarMenuItem>
+             <SidebarMenuButton onClick={handleLogout} tooltip="Cerrar Sesión">
+                <LogOut /><span>Cerrar Sesión</span>
              </SidebarMenuButton>
            </SidebarMenuItem>
          </SidebarMenu>

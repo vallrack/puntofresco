@@ -1,8 +1,18 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 export default function AnimatedBackground() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null;
+  }
+
   return (
     <div className="fixed inset-0 -z-10 h-screen w-full overflow-hidden bg-background">
       <div className="box">

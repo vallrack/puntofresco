@@ -4,9 +4,10 @@ import { initializeFirebase } from "@/firebase";
 
 /**
  * Sube una imagen a Firebase Storage directamente desde el cliente.
+ * Este es el método recomendado y más robusto.
  */
 export async function uploadImage(file: File, path: string): Promise<string> {
-  console.log('🚀 uploadImage (client-side): Iniciando subida...', {
+  console.log('🚀 uploadImage (client-side v2): Iniciando subida...', {
     fileName: file.name,
     fileSize: file.size,
     fileType: file.type,
@@ -24,15 +25,16 @@ export async function uploadImage(file: File, path: string): Promise<string> {
 
   try {
     const { storage } = initializeFirebase();
+    // Usamos el nombre del bucket por defecto que Firebase configura
     const storageRef = ref(storage, path);
 
-    console.log('📡 Subiendo al bucket, ruta:', path);
+    console.log('📡 Subiendo al bucket usando el SDK de cliente. Ruta:', path);
 
     const snapshot = await uploadBytes(storageRef, file, {
       contentType: file.type,
     });
     
-    console.log('✅ Archivo subido exitosamente:', snapshot.metadata.fullPath);
+    console.log('✅ Archivo subido exitosamente a través del SDK de cliente.');
 
     const downloadUrl = await getDownloadURL(snapshot.ref);
 
@@ -41,10 +43,10 @@ export async function uploadImage(file: File, path: string): Promise<string> {
     return downloadUrl;
 
   } catch (error: any) {
-    console.error('❌ Error en uploadImage (client-side):', error);
+    console.error('❌ Error en uploadImage (client-side v2):', error);
 
     if (error.code === 'storage/unauthorized') {
-      throw new Error('No tienes permiso para subir archivos. Revisa las reglas de Storage.');
+      throw new Error('No tienes permiso para subir archivos. Revisa las reglas de Storage. Asegúrate de que el usuario esté autenticado y la ruta de subida sea correcta.');
     }
     
     throw new Error(error.message || 'Error desconocido al subir la imagen');

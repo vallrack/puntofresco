@@ -3,11 +3,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { useCollection } from '@/firebase';
-import type { Sale, Product, User as AppUser, Purchase, Merma as MermaType } from '@/lib/types';
+import { useCollection, useUser, useDoc } from '@/firebase';
+import type { Sale, Product, Merma as MermaType } from '@/lib/types';
 import { DollarSign, TrendingUp, TrendingDown, ArchiveX, Users, CreditCard, Banknote, Landmark, FileDown } from 'lucide-react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Line, LineChart, CartesianGrid } from 'recharts';
-import { addDays, format, startOfMonth } from 'date-fns';
+import { startOfMonth } from 'date-fns';
+import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { es } from 'date-fns/locale';
 import jsPDF from 'jspdf';
@@ -17,15 +18,27 @@ import * as XLSX from 'xlsx';
 type UserData = { id: string; email: string; };
 
 export default function ReportsPage() {
+  const { user, loading: userLoading } = useUser();
+  const { data: userData } = useDoc<{ rol: string }>({ path: 'usuarios', id: user?.uid });
+  const isAdmin = useMemo(() => userData?.rol === 'admin' || userData?.rol === 'super_admin', [userData]);
+
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: startOfMonth(new Date()),
     to: new Date(),
   });
 
-  const { data: sales, loading: loadingSales } = useCollection<Sale>({ path: 'ventas' });
+  // La consulta de ventas ahora depende del rol del usuario
+  const { data: sales, loading: loadingSales } = useCollection<Sale>({ 
+    path: 'ventas',
+    query: !userLoading && !isAdmin && user?.uid ? ['vendedorId', '==', user.uid] : undefined,
+  });
+
   const { data: products, loading: loadingProducts } = useCollection<Product>({ path: 'productos' });
   const { data: users, loading: loadingUsers } = useCollection<UserData>({ path: 'usuarios' });
-  const { data: mermas, loading: loadingMermas } = useCollection<MermaType>({ path: 'mermas' });
+  const { data: mermas, loading: loadingMermas } = useCollection<MermaType>({ 
+    path: 'mermas',
+    query: !userLoading && !isAdmin ? ['registradoPor', '==', user?.uid] : undefined,
+  });
 
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
   const [filteredMermas, setFilteredMermas] = useState<MermaType[]>([]);
@@ -49,7 +62,6 @@ export default function ReportsPage() {
       return;
     }
     
-    // Ajustar el final del día para incluir todas las ventas de ese día
     const toDate = new Date(dateRange.to);
     toDate.setHours(23, 59, 59, 999);
 
@@ -70,10 +82,8 @@ export default function ReportsPage() {
   }, [sales, mermas, dateRange]);
   
   useEffect(() => {
-      if (loadingSales || loadingProducts || loadingMermas) return;
-      if (!products || !users) return;
+      if (loadingSales || loadingProducts || loadingMermas || !products || !users) return;
 
-      // Calcular KPIs
       const totalRevenue = filteredSales.reduce((acc, sale) => acc + sale.total, 0);
       const totalCost = filteredSales.reduce((acc, sale) => {
           const saleCost = sale.items.reduce((itemAcc, item) => {
@@ -92,7 +102,6 @@ export default function ReportsPage() {
       
       setReportData({ totalRevenue, totalCost, totalLoss, netProfit });
 
-      // Calcular Cierre de Caja por Vendedor
       const userMap = new Map(users.map(u => [u.id, u.email]));
       const salesByUserData: { [key: string]: number } = filteredSales.reduce((acc, sale) => {
         const userName = userMap.get(sale.vendedorId) || 'Desconocido';
@@ -102,15 +111,13 @@ export default function ReportsPage() {
 
       setSalesByUser(Object.entries(salesByUserData).map(([name, total]) => ({ name, total })));
 
-      // Calcular Ventas por Método de Pago
-       const salesByPaymentData = filteredSales.reduce((acc, sale) => {
+      const salesByPaymentData = filteredSales.reduce((acc, sale) => {
         acc[sale.metodoPago] = (acc[sale.metodoPago] || 0) + sale.total;
         return acc;
       }, {} as { [key: string]: number });
       
       setSalesByPaymentMethod(Object.entries(salesByPaymentData).map(([name, total]) => ({ name, total })));
 
-      // Calcular ventas y ganancias diarias para gráfico
       const salesByDate: { [key: string]: { ventas: number, ganancias: number } } = {};
       filteredSales.forEach(sale => {
           const dateStr = format(sale.fecha.toDate(), 'yyyy-MM-dd');
@@ -138,13 +145,11 @@ export default function ReportsPage() {
     const dateFrom = dateRange?.from ? format(dateRange.from, 'PPP', { locale: es }) : '';
     const dateTo = dateRange?.to ? format(dateRange.to, 'PPP', { locale: es }) : '';
 
-    // Título
     doc.setFontSize(18);
     doc.text('Reporte Financiero - Punto Fresco', 14, 22);
     doc.setFontSize(11);
     doc.text(`Período: ${dateFrom} - ${dateTo}`, 14, 30);
     
-    // KPIs
     doc.setFontSize(12);
     doc.text('Resumen del Período', 14, 45);
     autoTable(doc, {
@@ -159,7 +164,6 @@ export default function ReportsPage() {
       styles: { fontStyle: 'bold' }
     });
 
-    // Tabla de ventas
     const salesData = filteredSales.map(sale => {
        const saleCost = sale.items.reduce((acc, item) => {
           const product = productMap.get(item.productId);
@@ -186,7 +190,6 @@ export default function ReportsPage() {
   };
 
   const handleExportExcel = () => {
-    // Hoja 1: Resumen
     const summaryData = [
       { Métrica: 'Ingresos Totales', Valor: reportData.totalRevenue },
       { Métrica: 'Costo de Mercancía', Valor: reportData.totalCost },
@@ -199,7 +202,6 @@ export default function ReportsPage() {
     summaryWorksheet['B3'].z = '$#,##0.00';
     summaryWorksheet['B4'].z = '$#,##0.00';
 
-    // Hoja 2: Ventas Detalladas
     const salesExportData = filteredSales.map(sale => {
       const saleCost = sale.items.reduce((acc, item) => {
         const product = productMap.get(item.productId);
@@ -218,7 +220,6 @@ export default function ReportsPage() {
       };
     });
     const salesWorksheet = XLSX.utils.json_to_sheet(salesExportData);
-     // Apply currency format
     if(salesWorksheet['!ref']) {
       const range = XLSX.utils.decode_range(salesWorksheet['!ref']);
       for (let R = range.s.r + 1; R <= range.e.r; ++R) {
@@ -236,7 +237,7 @@ export default function ReportsPage() {
     XLSX.writeFile(workbook, `Reporte_PuntoFresco_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
-  const loading = loadingSales || loadingProducts || loadingUsers || loadingMermas;
+  const loading = userLoading || loadingSales || loadingProducts || loadingUsers || loadingMermas;
 
   return (
     <div className="space-y-6">
@@ -244,15 +245,19 @@ export default function ReportsPage() {
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <CardTitle>Reportes Financieros</CardTitle>
+                <CardTitle>{isAdmin ? 'Reportes Financieros' : 'Mi Reporte de Ventas'}</CardTitle>
                 <CardDescription>
-                  Análisis de ganancias, pérdidas y rendimiento del negocio.
+                  {isAdmin ? 'Análisis de ganancias, pérdidas y rendimiento del negocio.' : 'Resumen de tus ventas en el período seleccionado.'}
                 </CardDescription>
               </div>
               <div className='flex items-center gap-2 flex-wrap'>
                 <DateRangePicker range={dateRange} onRangeChange={setDateRange} />
-                <Button variant="outline" onClick={handleExportPDF} disabled={loading}><FileDown className="mr-2 h-4 w-4" /> PDF</Button>
-                <Button variant="outline" onClick={handleExportExcel} disabled={loading}><FileDown className="mr-2 h-4 w-4" /> Excel</Button>
+                 {isAdmin && (
+                  <>
+                    <Button variant="outline" onClick={handleExportPDF} disabled={loading}><FileDown className="mr-2 h-4 w-4" /> PDF</Button>
+                    <Button variant="outline" onClick={handleExportExcel} disabled={loading}><FileDown className="mr-2 h-4 w-4" /> Excel</Button>
+                  </>
+                 )}
               </div>
           </div>
         </CardHeader>
@@ -272,42 +277,46 @@ export default function ReportsPage() {
                 <p className="text-xs text-muted-foreground">Total de ventas en el período</p>
               </CardContent>
             </Card>
-             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Costo de Mercancía</CardTitle>
-                <TrendingDown className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${reportData.totalCost.toFixed(2)}</div>
-                 <p className="text-xs text-muted-foreground">Costo de los productos vendidos</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pérdidas (Merma)</CardTitle>
-                <ArchiveX className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-destructive">${reportData.totalLoss.toFixed(2)}</div>
-                 <p className="text-xs text-muted-foreground">Costo de productos dados de baja</p>
-              </CardContent>
-            </Card>
-            <Card className="border-primary/50">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Utilidad Neta</CardTitle>
-                <TrendingUp className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${reportData.netProfit >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                  ${reportData.netProfit.toFixed(2)}
-                </div>
-                <p className="text-xs text-muted-foreground">Ingresos - Costos - Mermas</p>
-              </CardContent>
-            </Card>
+            {isAdmin && (
+              <>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Costo de Mercancía</CardTitle>
+                    <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">${reportData.totalCost.toFixed(2)}</div>
+                    <p className="text-xs text-muted-foreground">Costo de los productos vendidos</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Pérdidas (Merma)</CardTitle>
+                    <ArchiveX className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-destructive">${reportData.totalLoss.toFixed(2)}</div>
+                    <p className="text-xs text-muted-foreground">Costo de productos dados de baja</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-primary/50">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Utilidad Neta</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className={`text-2xl font-bold ${reportData.netProfit >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                      ${reportData.netProfit.toFixed(2)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Ingresos - Costos - Mermas</p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="lg:col-span-4">
+          <div className={`grid gap-4 ${isAdmin ? 'md:grid-cols-2 lg:grid-cols-7' : 'md:grid-cols-1'}`}>
+            <Card className={isAdmin ? 'lg:col-span-4' : ''}>
               <CardHeader>
                 <CardTitle>Rendimiento de Ventas</CardTitle>
                 <CardDescription>Evolución de ventas y ganancias en el período seleccionado.</CardDescription>
@@ -321,12 +330,12 @@ export default function ReportsPage() {
                     <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
                     <Legend />
                     <Line type="monotone" dataKey="ventas" stroke="#8884d8" name="Ventas Totales" />
-                    <Line type="monotone" dataKey="ganancias" stroke="#82ca9d" name="Ganancia Bruta" />
+                    {isAdmin && <Line type="monotone" dataKey="ganancias" stroke="#82ca9d" name="Ganancia Bruta" />}
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-             <Card className="lg:col-span-3">
+             <Card className={isAdmin ? 'lg:col-span-3' : ''}>
               <CardHeader>
                 <CardTitle>Ventas por Método de Pago</CardTitle>
                 <CardDescription>Desglose de ingresos por método de pago.</CardDescription>
@@ -344,22 +353,24 @@ export default function ReportsPage() {
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-                <CardTitle>Cierre de Caja por Vendedor</CardTitle>
-                <CardDescription>Resumen de ventas totales por cada vendedor en el período seleccionado.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={salesByUser}>
-                        <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} angle={-45} textAnchor="end" height={60} />
-                        <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                        <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} cursor={{fill: 'hsl(var(--muted))'}}/>
-                        <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          {isAdmin && (
+            <Card>
+              <CardHeader>
+                  <CardTitle>Cierre de Caja por Vendedor</CardTitle>
+                  <CardDescription>Resumen de ventas totales por cada vendedor en el período seleccionado.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <ResponsiveContainer width="100%" height={250}>
+                      <BarChart data={salesByUser}>
+                          <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} angle={-45} textAnchor="end" height={60} />
+                          <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                          <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} cursor={{fill: 'hsl(var(--muted))'}}/>
+                          <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                  </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
     </div>

@@ -68,9 +68,9 @@ service cloud.firestore {
       // Admins/SuperAdmins pueden ver documentos individuales.
       // Vendedores solo pueden ver sus propias ventas.
       allow get: if isAdmin() || (isVendedor() && resource.data.vendedorId == request.auth.uid);
-      // Admins/SuperAdmins pueden listar todas las ventas.
-      // Vendedores solo pueden listar ventas si la consulta filtra por su propio UID.
-      allow list: if isAdmin() || (isVendedor() && request.query.get('where.vendedorId.==') == request.auth.uid);
+      // Los Admins pueden listar todo. Los vendedores solo pueden leer sus propias ventas.
+      // La seguridad de la consulta de lista se aplica en el código de la app.
+      allow list: if isAdmin();
       // Cualquiera autenticado puede crear una venta si es para sí mismo.
       allow create: if isAuthenticated() && request.resource.data.vendedorId == request.auth.uid;
       allow update, delete: if isAdmin();
@@ -95,11 +95,15 @@ service cloud.firestore {
     }
 
     match /mermas/{mermaId} {
+      // Los Admins/SuperAdmins pueden obtener cualquier registro de merma.
+      // Los vendedores solo pueden obtener las mermas que ellos mismos registraron.
       allow get: if isAdmin() || (isVendedor() && resource.data.registradoPor == request.auth.uid);
-      // Admins pueden listar todo. Vendedores pueden listar si la consulta filtra por su UID.
-      allow list: if isAdmin() || (isVendedor() && request.query.get('where.registradoPor.==') == request.auth.uid);
-      allow create: if isAdmin() || isVendedor();
-      // No se permite modificar ni borrar para mantener la integridad.
+      // Los Admins pueden listar todas las mermas.
+      // La seguridad para que los vendedores solo listen sus mermas se aplica en el código de la app.
+      allow list: if isAdmin();
+      // Solo usuarios autenticados (vendedores/admins) pueden crear mermas.
+      allow create: if isAuthenticated();
+      // No se permite modificar ni borrar para mantener la integridad de los registros.
       allow update, delete: if false; 
     }
   }

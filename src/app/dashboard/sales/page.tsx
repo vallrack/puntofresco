@@ -36,10 +36,11 @@ export default function SalesPage() {
   const { data: userData } = useDoc<{ rol: string }>({ path: 'usuarios', id: user?.uid });
   const isAdmin = useMemo(() => userData?.rol === 'admin' || userData?.rol === 'super_admin', [userData]);
 
+  // La consulta ahora depende del rol del usuario.
   const { data: sales, loading: loadingSales } = useCollection<Sale>({
     path: 'ventas',
-    // Si el usuario no es admin, filtramos las ventas para que solo vea las suyas.
-    query: isAdmin || !user?.uid ? undefined : ['vendedorId', '==', user.uid],
+    // Si el usuario no es admin y ya se ha cargado, filtramos las ventas para que solo vea las suyas.
+    query: !userLoading && !isAdmin && user?.uid ? ['vendedorId', '==', user.uid] : undefined,
   });
   
   const { data: users, loading: loadingUsers } = useCollection<UserData>({ path: 'usuarios' });

@@ -35,11 +35,20 @@ export function useCollection<T extends DocumentData>({
 
   const fetchData = useCallback(() => {
      if (userLoading) {
+      // Don't fetch if the user state is not yet determined
       return;
     }
 
     if (!user) {
+      // If there is no user, clear data and stop loading
       setData(null);
+      setLoading(false);
+      return;
+    }
+    
+    // If there's a query but the value is undefined, it means we are waiting
+    // for a dependency (like user.uid), so we don't execute the query yet.
+    if (queryParams && queryParams[2] === undefined) {
       setLoading(false);
       return;
     }
@@ -52,7 +61,8 @@ export function useCollection<T extends DocumentData>({
     } else {
       q = query(collectionRef);
     }
-     setLoading(true);
+
+    setLoading(true);
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc) => ({
         ...doc.data(),

@@ -64,7 +64,7 @@ export default function Cart() {
     }
 
     setIsProcessing(true);
-    const saleData: Sale = {
+    const saleData: Omit<Sale, 'id' | 'fecha'> = {
       vendedorId: user.uid,
       items: items.map(item => ({
         productId: item.id,
@@ -73,7 +73,6 @@ export default function Cart() {
         precioVenta: item.precioVenta,
       })),
       total: total(),
-      fecha: new Date(), // This will be replaced by serverTimestamp
       metodoPago: metodoPago,
     };
 
@@ -83,8 +82,14 @@ export default function Cart() {
         title: "Venta completada",
         description: `Venta con ${metodoPago} registrada correctamente.`,
       });
-      // Add id and use a valid date for the modal
-      setCompletedSale({ ...saleData, id: saleId, fecha: new Date() });
+      
+      const finalSaleData: Sale = {
+        ...saleData,
+        id: saleId,
+        fecha: new Date(), // Usamos una fecha local para mostrar el recibo inmediatamente
+      };
+
+      setCompletedSale(finalSaleData);
       clearCart();
     } catch (error: any) {
       console.error("Error processing sale: ", error);

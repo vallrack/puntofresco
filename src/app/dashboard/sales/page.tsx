@@ -38,6 +38,7 @@ export default function SalesPage() {
 
   const { data: sales, loading: loadingSales } = useCollection<Sale>({
     path: 'ventas',
+    // Si el usuario no es admin, filtramos las ventas para que solo vea las suyas.
     query: isAdmin || !user?.uid ? undefined : ['vendedorId', '==', user.uid],
   });
   
@@ -54,7 +55,11 @@ export default function SalesPage() {
   const filteredSales = useMemo(() => {
     if (!sales) return [];
     // Sort by date, newest first
-    const sortedSales = [...sales].sort((a, b) => b.fecha.toMillis() - a.fecha.toMillis());
+    const sortedSales = [...sales].sort((a, b) => {
+      const dateA = a.fecha?.toDate ? a.fecha.toDate() : new Date(0);
+      const dateB = b.fecha?.toDate ? b.fecha.toDate() : new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
     
     if (!searchTerm) return sortedSales;
 
@@ -62,7 +67,8 @@ export default function SalesPage() {
       const saleIdMatch = sale.id?.toLowerCase().includes(searchTerm.toLowerCase());
       const vendedorEmail = userMap.get(sale.vendedorId)?.toLowerCase() || '';
       const vendedorMatch = vendedorEmail.includes(searchTerm.toLowerCase());
-      const dateMatch = format(sale.fecha.toDate(), 'dd/MM/yyyy').includes(searchTerm);
+      const saleDate = sale.fecha?.toDate ? sale.fecha.toDate() : null;
+      const dateMatch = saleDate ? format(saleDate, 'dd/MM/yyyy').includes(searchTerm) : false;
       const paymentMethodMatch = sale.metodoPago?.toLowerCase().includes(searchTerm.toLowerCase());
       
       return saleIdMatch || vendedorMatch || dateMatch || paymentMethodMatch;
@@ -99,7 +105,7 @@ export default function SalesPage() {
               <TableRow>
                 <TableHead>Fecha</TableHead>
                 <TableHead>ID Venta</TableHead>
-                <TableHead>Vendedor</TableHead>
+                {isAdmin && <TableHead>Vendedor</TableHead>}
                 <TableHead>Método de Pago</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
@@ -108,41 +114,46 @@ export default function SalesPage() {
             <TableBody>
               {loading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
+                  <TableCell colSpan={isAdmin ? 6 : 5} className="text-center">
                     Cargando ventas...
                   </TableCell>
                 </TableRow>
               )}
               {!loading && filteredSales.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
+                  <TableCell colSpan={isAdmin ? 6 : 5} className="text-center">
                     No se encontraron ventas.
                   </TableCell>
                 </TableRow>
               )}
               {!loading &&
-                filteredSales.map((sale) => (
-                  <TableRow key={sale.id}>
-                    <TableCell className="font-medium">
-                        <div className="flex flex-col">
-                            <span>{format(sale.fecha.toDate(), 'PPP', { locale: es })}</span>
-                            <span className="text-xs text-muted-foreground">{format(sale.fecha.toDate(), 'p', { locale: es })}</span>
-                        </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{sale.id}</TableCell>
-                    <TableCell>{userMap.get(sale.vendedorId) || 'Desconocido'}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{sale.metodoPago}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-bold">${sale.total.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">
-                       <Button variant="outline" size="icon" onClick={() => setSelectedSale(sale)}>
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only">Ver Detalles</span>
-                        </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                filteredSales.map((sale) => {
+                  const saleDate = sale.fecha?.toDate ? sale.fecha.toDate() : null;
+                  return (
+                    <TableRow key={sale.id}>
+                      <TableCell className="font-medium">
+                        {saleDate ? (
+                          <div className="flex flex-col">
+                            <span>{format(saleDate, 'PPP', { locale: es })}</span>
+                            <span className="text-xs text-muted-foreground">{format(saleDate, 'p', { locale: es })}</span>
+                          </div>
+                        ) : 'Fecha inválida'}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{sale.id}</TableCell>
+                      {isAdmin && <TableCell>{userMap.get(sale.vendedorId) || 'Desconocido'}</TableCell>}
+                      <TableCell>
+                        <Badge variant="outline">{sale.metodoPago}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-bold">${sale.total.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="icon" onClick={() => setSelectedSale(sale)}>
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">Ver Detalles</span>
+                          </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
             </TableBody>
           </Table>
         </CardContent>

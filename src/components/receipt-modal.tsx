@@ -12,6 +12,8 @@ import type { Sale } from '@/lib/types';
 import { useRef } from 'react';
 import { Separator } from './ui/separator';
 import { ShoppingBasket, Printer } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface ReceiptModalProps {
   sale: Sale;
@@ -24,6 +26,9 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
   const taxes = sale.total / 1.07 * 0.07;
   const subtotal = sale.total - taxes;
 
+  // Convert Firestore Timestamp to JS Date if necessary
+  const saleDate = sale.fecha?.toDate ? sale.fecha.toDate() : new Date(sale.fecha);
+
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow && receiptRef.current) {
@@ -31,7 +36,7 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
       const printStyles = `
         <style>
           @page {
-            size: 7cm auto; /* Ancho de impresora térmica, altura automática */
+            size: 7cm auto;
             margin: 0.5cm;
           }
           body {
@@ -73,6 +78,9 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
              border-bottom: 1px dashed #cbd5e0;
              padding: 0.5rem 0;
              margin-bottom: 1rem;
+             display: flex;
+             flex-direction: column;
+             gap: 4px;
           }
           .details-row {
             display: flex;
@@ -153,11 +161,11 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
             </div>
             <div className="details-row">
               <span>Fecha:</span>
-              <span>{new Date(sale.fecha).toLocaleDateString()}</span>
+              <span>{isValidDate(saleDate) ? format(saleDate, 'dd/MM/yyyy') : 'N/A'}</span>
             </div>
             <div className="details-row">
               <span>Hora:</span>
-              <span>{new Date(sale.fecha).toLocaleTimeString()}</span>
+              <span>{isValidDate(saleDate) ? format(saleDate, 'p', { locale: es }) : 'N/A'}</span>
             </div>
             <div className="details-row">
               <span>Pagado con:</span>
@@ -214,4 +222,8 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
       </DialogContent>
     </Dialog>
   );
+}
+
+function isValidDate(d: any) {
+  return d instanceof Date && !isNaN(d.getTime());
 }

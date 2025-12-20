@@ -8,7 +8,8 @@ import {
 } from 'firebase/firestore';
 import type { Sale } from './types';
 
-export async function processSale(firestore: Firestore, saleData: Sale): Promise<string> {
+// La data que llega no tiene 'id' ni 'fecha' porque se generan en el backend
+export async function processSale(firestore: Firestore, saleData: Omit<Sale, 'id' | 'fecha'>): Promise<string> {
   if (!saleData.vendedorId) {
     throw new Error('ID de vendedor no válido.');
   }
@@ -21,7 +22,6 @@ export async function processSale(firestore: Firestore, saleData: Sale): Promise
   try {
     await runTransaction(firestore, async (transaction) => {
       // --- FASE DE LECTURA ---
-      // Primero, lee todos los documentos de productos para verificar el stock.
       const productRefs = saleData.items.map(item => doc(firestore, 'productos', item.productId));
       const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
 
@@ -41,15 +41,10 @@ export async function processSale(firestore: Firestore, saleData: Sale): Promise
       }
 
       // --- FASE DE ESCRITURA ---
-      // Si todas las lecturas y validaciones son correctas, ahora realizamos todas las escrituras.
-
       // 1. Crear el nuevo documento de venta.
       transaction.set(saleRef, {
-        vendedorId: saleData.vendedorId,
-        items: saleData.items,
-        total: saleData.total,
-        fecha: serverTimestamp(),
-        metodoPago: saleData.metodoPago,
+        ...saleData,
+        fecha: serverTimestamp(), // Usar el timestamp del servidor
       });
 
       // 2. Actualizar el stock de cada producto.

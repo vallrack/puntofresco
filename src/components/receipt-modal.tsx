@@ -30,16 +30,20 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
       const receiptHTML = receiptRef.current.innerHTML;
       const printStyles = `
         <style>
+          @page {
+            size: 7cm auto; /* Ancho de impresora térmica, altura automática */
+            margin: 0.5cm;
+          }
           body {
             font-family: 'Inter', sans-serif;
             margin: 0;
-            padding: 10px;
+            padding: 0;
             color: #1a202c;
             line-height: 1.5;
             -webkit-print-color-adjust: exact;
           }
           .receipt-container {
-             width: 302px; /* Standard thermal printer width */
+             width: 100%;
              margin: 0 auto;
           }
           .header {

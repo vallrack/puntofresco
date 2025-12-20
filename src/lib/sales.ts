@@ -2,10 +2,8 @@
 import {
   collection,
   doc,
-  increment,
   runTransaction,
   serverTimestamp,
-  writeBatch,
   type Firestore,
 } from 'firebase/firestore';
 import type { Sale } from './types';
@@ -22,7 +20,30 @@ export async function processSale(firestore: Firestore, saleData: Sale): Promise
 
   try {
     await runTransaction(firestore, async (transaction) => {
-      // 1. Create a new sale document
+      // --- FASE DE LECTURA ---
+      // Primero, lee todos los documentos de productos para verificar el stock.
+      const productRefs = saleData.items.map(item => doc(firestore, 'productos', item.productId));
+      const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
+
+      // --- FASE DE VALIDACIÓN ---
+      for (let i = 0; i < productDocs.length; i++) {
+        const productDoc = productDocs[i];
+        const item = saleData.items[i];
+        
+        if (!productDoc.exists()) {
+          throw new Error(`El producto "${item.nombre}" no existe.`);
+        }
+
+        const newStock = productDoc.data().stock - item.quantity;
+        if (newStock < 0) {
+          throw new Error(`Stock insuficiente para "${item.nombre}".`);
+        }
+      }
+
+      // --- FASE DE ESCRITURA ---
+      // Si todas las lecturas y validaciones son correctas, ahora realizamos todas las escrituras.
+
+      // 1. Crear el nuevo documento de venta.
       transaction.set(saleRef, {
         vendedorId: saleData.vendedorId,
         items: saleData.items,
@@ -31,22 +52,12 @@ export async function processSale(firestore: Firestore, saleData: Sale): Promise
         metodoPago: saleData.metodoPago,
       });
 
-      // 2. Update stock for each product in the sale
-      for (const item of saleData.items) {
-        const productRef = doc(firestore, 'productos', item.productId);
-        
-        // We read the document inside the transaction to ensure atomicity
-        const productDoc = await transaction.get(productRef);
-        if (!productDoc.exists()) {
-            throw new Error(`El producto "${item.nombre}" no existe.`);
-        }
-
+      // 2. Actualizar el stock de cada producto.
+      for (let i = 0; i < productDocs.length; i++) {
+        const productDoc = productDocs[i];
+        const item = saleData.items[i];
         const newStock = productDoc.data().stock - item.quantity;
-        if (newStock < 0) {
-          throw new Error(`Stock insuficiente para "${item.nombre}".`);
-        }
-        
-        transaction.update(productRef, { stock: newStock });
+        transaction.update(productRefs[i], { stock: newStock });
       }
     });
      return saleRef.id;

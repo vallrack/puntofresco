@@ -13,8 +13,8 @@ import { Label } from '@/components/ui/label';
 import { ShoppingBasket } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { signInWithEmailAndPassword, setDoc as setAuthDoc } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { initializeFirebase } from '@/firebase';
@@ -76,6 +76,9 @@ export default function LoginPage() {
           case 'auth/too-many-requests':
             errorMessage = 'Demasiados intentos de inicio de sesión. Inténtalo de nuevo más tarde.';
             break;
+          case 'auth/configuration-not-found':
+             errorMessage = 'El método de inicio de sesión no está habilitado en la consola de Firebase.';
+             break;
           default:
             errorMessage = err.message || 'Ha ocurrido un problema inesperado. Por favor, inténtalo más tarde.';
             break;
@@ -145,3 +148,10 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="text-center text-sm">
           <p className="w-full">
+            ¿No tienes una cuenta? Contacta a tu administrador.
+          </p>
+        </CardFooter>
+      </Card>
+    </div>
+  );
+}

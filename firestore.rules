@@ -40,9 +40,9 @@ service cloud.firestore {
     match /productos/{productoId} {
       allow read: if isAuthenticated();
       allow create: if isAdmin();
-      // Cualquier usuario autenticado (vendedor o admin) puede actualizar productos.
-      // La lógica de negocio (ej. qué campos pueden actualizar) se maneja en la app y transacciones.
-      allow update: if isAuthenticated();
+      // Admins y Vendedores pueden actualizar productos.
+      // Los vendedores lo necesitan para actualizar el stock durante una venta.
+      allow update: if isAdmin() || isVendedor();
       allow delete: if isAdmin();
     }
 

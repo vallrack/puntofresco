@@ -139,7 +139,33 @@
       "title": "Compra",
       "description": "Representa una compra a un proveedor.",
       "type": "object",
-      "properties": {}
+      "properties": {
+        "proveedorId": {
+          "type": "string",
+          "description": "ID del proveedor al que se realizó la compra."
+        },
+        "fecha": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha y hora de la compra."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "productId": { "type": "string" },
+              "nombre": { "type": "string" },
+              "cantidad": { "type": "number" },
+              "costoUnitario": { "type": "number" }
+            }
+          }
+        },
+        "total": {
+          "type": "number"
+        }
+      },
+      "required": ["proveedorId", "fecha", "items", "total"]
     },
     "reporte_financiero": {
       "title": "Reporte Financiero",
@@ -160,6 +186,18 @@
       "required": [
         "nombre"
       ]
+    },
+    "proveedor": {
+      "title": "Proveedor",
+      "description": "Representa un proveedor de productos.",
+      "type": "object",
+      "properties": {
+        "nombre": { "type": "string", "description": "Nombre del proveedor." },
+        "telefono": { "type": "string", "description": "Teléfono de contacto." },
+        "email": { "type": "string", "format": "email", "description": "Email de contacto." },
+        "direccion": { "type": "string", "description": "Dirección del proveedor." }
+      },
+      "required": ["nombre"]
     }
   },
   "auth": {
@@ -203,6 +241,12 @@
         "$ref": "#/entities/categoria"
       },
       "description": "Almacena las categorías de los productos."
+    },
+    "/proveedores/{proveedorId}": {
+      "schema": {
+        "$ref": "#/entities/proveedor"
+      },
+      "description": "Almacena la información de los proveedores."
     }
   }
 }

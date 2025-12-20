@@ -23,6 +23,7 @@ import {
   ShoppingBasket,
   FolderKanban,
   LogOut,
+  Building,
 } from "lucide-react"
 import { useUser } from "@/firebase/auth/use-user"
 import { useDoc } from "@/firebase/firestore/use-doc"
@@ -124,6 +125,11 @@ export default function DashboardSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Compras" isActive={isActive('/dashboard/purchases')}>
                   <Link href="/dashboard/purchases"><Truck /><span>Compras</span></Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Proveedores" isActive={isActive('/dashboard/suppliers')}>
+                  <Link href="/dashboard/suppliers"><Building /><span>Proveedores</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

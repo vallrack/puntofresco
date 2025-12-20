@@ -80,7 +80,7 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
           }
           .item-info {
             flex-grow: 1;
-            margin-left: 0.5rem;
+            margin-right: 0.5rem;
           }
           .item-info p {
             margin: 0;
@@ -94,6 +94,7 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
           }
           .item-total {
             font-weight: 500;
+            text-align: right;
           }
           .totals {
             border-top: 1px dashed #cbd5e0;
@@ -133,13 +134,13 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-sm">
         <div ref={receiptRef} className="p-4 pt-0">
-          <DialogHeader className="header text-center mb-4">
+          <div className="header text-center mb-4">
             <ShoppingBasket className="mx-auto w-10 h-10 text-primary" />
-            <DialogTitle className="text-xl">Punto Fresco</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Punto Fresco</DialogTitle>
             <p className="text-xs text-muted-foreground">
               Gracias por su compra
             </p>
-          </DialogHeader>
+          </div>
 
           <div className="details text-xs my-4 py-2 border-t border-b border-dashed">
             <div className="details-row">
@@ -187,7 +188,7 @@ export default function ReceiptModal({ sale, isOpen, onClose }: ReceiptModalProp
               <span>Impuestos (7%):</span>
               <span className="font-medium text-foreground">${taxes.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-lg font-bold">
+            <div className="flex justify-between text-lg font-bold mt-2">
               <span>Total:</span>
               <span>${sale.total.toFixed(2)}</span>
             </div>

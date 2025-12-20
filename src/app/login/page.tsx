@@ -18,6 +18,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { initializeFirebase } from '@/firebase';
+import AnimatedBackground from '@/components/animated-background';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -94,64 +95,67 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Card className="w-full max-w-sm mx-auto border-2 border-primary/20 shadow-lg shadow-primary/10">
-        <CardHeader className="space-y-2 text-center">
-          <div className="inline-block bg-primary p-3 rounded-full mx-auto shadow-md">
-            <ShoppingBasket className="w-8 h-8 text-primary-foreground" />
-          </div>
-          <CardTitle className="text-2xl font-bold font-headline">
-            Punto Fresco
-          </CardTitle>
-          <CardDescription>
-            Ingresa tus credenciales para acceder al sistema.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@puntofresco.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+    <>
+      <AnimatedBackground />
+      <div className="flex items-center justify-center min-h-screen bg-transparent p-4 z-10 relative">
+        <Card className="w-full max-w-sm mx-auto border-2 border-primary/20 shadow-lg shadow-primary/10">
+          <CardHeader className="space-y-2 text-center">
+            <div className="inline-block bg-primary p-3 rounded-full mx-auto shadow-md">
+              <ShoppingBasket className="w-8 h-8 text-primary-foreground" />
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Contraseña</Label>
-                <Link
-                  href="#"
-                  className="ml-auto inline-block text-sm underline"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Link>
+            <CardTitle className="text-2xl font-bold font-headline">
+              Punto Fresco
+            </CardTitle>
+            <CardDescription>
+              Ingresa tus credenciales para acceder al sistema.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@puntofresco.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            {error && (
-              <p className="text-sm font-medium text-destructive">{error}</p>
-            )}
-            <Button type="submit" className="w-full font-semibold">
-              Iniciar Sesión
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="text-center text-sm">
-          <p className="w-full">
-            ¿No tienes una cuenta? Contacta a tu administrador.
-          </p>
-        </CardFooter>
-      </Card>
-    </div>
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <Link
+                    href="#"
+                    className="ml-auto inline-block text-sm underline"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              {error && (
+                <p className="text-sm font-medium text-destructive">{error}</p>
+              )}
+              <Button type="submit" className="w-full font-semibold">
+                Iniciar Sesión
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="text-center text-sm">
+            <p className="w-full">
+              ¿No tienes una cuenta? Contacta a tu administrador.
+            </p>
+          </CardFooter>
+        </Card>
+      </div>
+    </>
   );
 }

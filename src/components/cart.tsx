@@ -2,7 +2,7 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Trash2, Plus, Minus, ShoppingCart } from "lucide-react"
+import { Trash2, Plus, Minus, ShoppingCart, XCircle } from "lucide-react"
 import Image from "next/image"
 import { useCartStore } from "@/store/cart"
 import { useUser, useFirestore } from "@/firebase"
@@ -30,7 +30,7 @@ export default function Cart() {
   const [completedSale, setCompletedSale] = useState<Sale | null>(null);
 
   const handlePayment = async () => {
-    if (!user) {
+    if (!user || !firestore) {
       toast({
         variant: "destructive",
         title: "Error",
@@ -49,7 +49,7 @@ export default function Cart() {
         precioVenta: item.precioVenta,
       })),
       total: total(),
-      fecha: new Date(),
+      fecha: new Date(), // This will be replaced by serverTimestamp
     };
 
     try {
@@ -58,7 +58,8 @@ export default function Cart() {
         title: "Venta completada",
         description: "La venta se ha registrado correctamente.",
       });
-      setCompletedSale({ ...saleData, id: saleId });
+      // Add id and use a valid date for the modal
+      setCompletedSale({ ...saleData, id: saleId, fecha: new Date() });
       clearCart();
     } catch (error: any) {
       console.error("Error processing sale: ", error);
@@ -76,12 +77,12 @@ export default function Cart() {
   if (items.length === 0) {
     return (
        <>
-        <Card className="shadow-md">
+        <Card className="shadow-lg border-primary/20">
           <CardHeader>
             <CardTitle>Venta Actual</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center text-center py-16">
-            <ShoppingCart className="w-16 h-16 text-muted-foreground mb-4" />
+          <CardContent className="flex flex-col items-center justify-center text-center py-20 bg-card">
+            <ShoppingCart className="w-16 h-16 text-muted-foreground/50 mb-4" />
             <p className="font-semibold text-muted-foreground">El carrito está vacío</p>
             <p className="text-sm text-muted-foreground">Agrega productos para iniciar una venta.</p>
           </CardContent>
@@ -99,13 +100,19 @@ export default function Cart() {
 
   return (
     <>
-      <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle>Venta Actual</CardTitle>
-          <CardDescription>Revisa los productos antes de cobrar.</CardDescription>
+      <Card className="shadow-lg border-primary/20">
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+                <CardTitle>Venta Actual</CardTitle>
+                <CardDescription>{items.length} producto(s)</CardDescription>
+            </div>
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={clearCart}>
+                <XCircle className="w-5 h-5"/>
+                <span className="sr-only">Limpiar Carrito</span>
+            </Button>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="max-h-[calc(100vh-450px)] min-h-[200px] overflow-y-auto px-6 divide-y divide-border">
+          <div className="max-h-[calc(100vh-480px)] min-h-[150px] overflow-y-auto px-6 divide-y divide-border">
             {items.map(item => (
               <div key={item.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
                 <Image src={item.imageUrl} alt={item.nombre} width={48} height={48} className="rounded-md object-cover aspect-square" data-ai-hint={item.imageHint} />
@@ -127,7 +134,7 @@ export default function Cart() {
             ))}
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col p-6 space-y-4 bg-card-foreground/5">
+        <CardFooter className="flex flex-col p-6 space-y-4 bg-muted/50">
           <div className="w-full space-y-2 text-sm">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal</span>
@@ -143,8 +150,8 @@ export default function Cart() {
               <span>${total().toFixed(2)}</span>
             </div>
           </div>
-          <Button size="lg" className="w-full font-bold text-lg h-12" onClick={handlePayment} disabled={isProcessing}>
-             {isProcessing ? 'Procesando...' : 'Pagar'}
+          <Button size="lg" className="w-full font-bold text-lg h-14" onClick={handlePayment} disabled={isProcessing}>
+             {isProcessing ? 'Procesando...' : `Pagar $${total().toFixed(2)}`}
           </Button>
         </CardFooter>
       </Card>

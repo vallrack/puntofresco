@@ -24,6 +24,10 @@ import { Button } from '@/components/ui/button';
 import { Banknote, CreditCard, Landmark, DollarSign, Printer, CheckCircle2 } from 'lucide-react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 
+function isValidDate(d: any) {
+  return d instanceof Date && !isNaN(d.getTime());
+}
+
 export default function MySessionPage() {
   const { user, loading: userLoading } = useUser();
   const printRef = useRef<HTMLDivElement>(null);
@@ -210,14 +214,14 @@ export default function MySessionPage() {
       )}
 
       {/* Estilos CSS para impresión */}
-      <style jsx global>{\`
+      <style jsx global>{`
         @media print {
           body * { visibility: hidden; }
           .print\\:block, .print\\:block * { visibility: visible; }
           .print\\:block { position: absolute; left: 0; top: 0; width: 100%; }
           .print\\:hidden { display: none !important; }
         }
-      \`}</style>
+      `}</style>
     </div>
   );
 }

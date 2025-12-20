@@ -114,7 +114,7 @@ export default function UsersPage() {
   const filteredUsers = useMemo(() => {
     if (!users) return [];
     return users.filter((user) =>
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
          (user.nombre && user.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [users, searchTerm]);
@@ -459,8 +459,8 @@ export default function UsersPage() {
             <DialogTitle>¿Estás seguro?</DialogTitle>
             <DialogDescription>
               Esta acción no se puede deshacer. Se eliminará el perfil de Firestore para <strong className="break-all">{selectedUser?.email}</strong>. El usuario no podrá iniciar sesión.
-            </DialogDescription>
-          </DialogHeader>
+            </dialog>
+          </Header>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setIsDeleteUserDialogOpen(false)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDeleteUser}>Sí, eliminar</Button>

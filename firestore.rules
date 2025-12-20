@@ -32,7 +32,8 @@ service cloud.firestore {
 
     match /usuarios/{userId} {
       allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
-      allow create: if isAdmin();
+      // Solo un super_admin puede crear nuevos usuarios
+      allow create: if isSuperAdmin();
       allow update, delete: if isSuperAdmin();
     }
 

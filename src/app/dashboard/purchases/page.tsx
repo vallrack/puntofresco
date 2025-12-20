@@ -1,20 +1,145 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Construction } from "lucide-react";
+'use client';
+import { useState, useMemo } from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, PlusCircle, Eye } from 'lucide-react';
+import { useCollection } from '@/firebase';
+import type { Purchase, Supplier } from '@/lib/types';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
 
 export default function PurchasesPage() {
+  const { data: purchases, loading: loadingPurchases } = useCollection<Purchase>({ path: 'compras' });
+  const { data: suppliers, loading: loadingSuppliers } = useCollection<Supplier>({ path: 'proveedores' });
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const supplierMap = useMemo(() => {
+    if (!suppliers) return new Map();
+    return new Map(suppliers.map(s => [s.id, s.nombre]));
+  }, [suppliers]);
+
+  const filteredPurchases = useMemo(() => {
+    if (!purchases) return [];
+    const sortedPurchases = [...purchases].sort((a, b) => {
+      const dateA = a.fecha?.toDate ? a.fecha.toDate() : new Date(0);
+      const dateB = b.fecha?.toDate ? b.fecha.toDate() : new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
+    if (!searchTerm) return sortedPurchases;
+
+    return sortedPurchases.filter(purchase => {
+      const purchaseIdMatch = purchase.id?.toLowerCase().includes(searchTerm.toLowerCase());
+      const supplierName = supplierMap.get(purchase.proveedorId)?.toLowerCase() || '';
+      const supplierMatch = supplierName.includes(searchTerm.toLowerCase());
+      const purchaseDate = purchase.fecha?.toDate ? purchase.fecha.toDate() : null;
+      const dateMatch = purchaseDate ? format(purchaseDate, 'dd/MM/yyyy').includes(searchTerm) : false;
+      
+      return purchaseIdMatch || supplierMatch || dateMatch;
+    });
+  }, [purchases, searchTerm, supplierMap]);
+
+  const loading = loadingPurchases || loadingSuppliers;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Compras</CardTitle>
-        <CardDescription>
-          Registro de compras a proveedores y actualización de stock.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center text-center py-16">
-        <Construction className="w-16 h-16 text-muted-foreground mb-4" />
-        <p className="font-semibold text-muted-foreground">Página en construcción</p>
-        <p className="text-sm text-muted-foreground">Aquí se registrarán las compras a proveedores.</p>
-      </CardContent>
-    </Card>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Historial de Compras</CardTitle>
+              <CardDescription>
+                Registro de compras a proveedores y actualización de stock.
+              </CardDescription>
+            </div>
+            <Button onClick={() => alert('Próximamente: Registrar nueva compra')}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Registrar Compra
+            </Button>
+          </div>
+          <div className="relative mt-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por ID, proveedor o fecha..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fecha</TableHead>
+                <TableHead>ID Compra</TableHead>
+                <TableHead>Proveedor</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    Cargando compras...
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading && filteredPurchases.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    No se encontraron compras.
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading &&
+                filteredPurchases.map((purchase) => {
+                  const purchaseDate = purchase.fecha?.toDate ? purchase.fecha.toDate() : null;
+                  return (
+                    <TableRow key={purchase.id}>
+                      <TableCell className="font-medium">
+                        {purchaseDate ? (
+                          <div className="flex flex-col">
+                            <span>{format(purchaseDate, 'PPP', { locale: es })}</span>
+                            <span className="text-xs text-muted-foreground">{format(purchaseDate, 'p', { locale: es })}</span>
+                          </div>
+                        ) : 'Fecha inválida'}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{purchase.id}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{supplierMap.get(purchase.proveedorId) || 'Desconocido'}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-bold">${purchase.total.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="icon" onClick={() => alert(`Detalles de la compra: ${purchase.id}`)}>
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">Ver Detalles</span>
+                          </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
   );
 }

@@ -49,7 +49,7 @@ export interface Supplier {
 }
 
 export interface Purchase {
-  id: string;
+  id?: string;
   proveedorId: string;
   fecha: any;
   items: {

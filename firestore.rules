@@ -50,10 +50,8 @@ service cloud.firestore {
 
     // Colección de Ventas
     match /ventas/{ventaId} {
-      // Admins pueden ver todas las ventas
-      allow read: if isAdmin();
-      // Vendedores solo pueden ver sus propias ventas
-      allow read: if isVendedor() && resource.data.vendedorId == request.auth.uid;
+      // Admins pueden ver todas las ventas y vendedores solo las suyas.
+      allow read: if isAdmin() || (isVendedor() && resource.data.vendedorId == request.auth.uid);
       // Cualquier usuario autenticado puede crear una venta
       allow create: if isAuthenticated(); 
       // Solo Admins pueden anular o editar ventas

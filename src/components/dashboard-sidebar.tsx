@@ -24,6 +24,7 @@ import {
   FolderKanban,
   LogOut,
   Building,
+  History,
 } from "lucide-react"
 import { useUser } from "@/firebase/auth/use-user"
 import { useDoc } from "@/firebase/firestore/use-doc"
@@ -61,6 +62,7 @@ export default function DashboardSidebar() {
   
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   const isSuperAdmin = userRole === 'super_admin';
+  const isVendedor = userRole === 'vendedor';
 
   const handleLogout = async () => {
     const auth = getAuth();
@@ -120,6 +122,13 @@ export default function DashboardSidebar() {
               <Link href="/dashboard/sales"><ShoppingCart /><span>Ventas</span></Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          {isVendedor && (
+             <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Mi Historial" isActive={isActive('/dashboard/history')}>
+                  <Link href="/dashboard/history"><History /><span>Mi Historial</span></Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+          )}
           {isAdmin && (
             <>
               <SidebarMenuItem>

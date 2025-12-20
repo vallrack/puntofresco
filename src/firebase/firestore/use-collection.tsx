@@ -46,12 +46,12 @@ export function useCollection<T extends DocumentData>({
     
     if (memoizedQuery) {
       const [field, op, value] = memoizedQuery;
-      // If the query is dependent on a value that isn't ready (e.g., user.uid),
-      // and we are not an admin who can see all data, we wait.
-      if (value === undefined) {
+      // If the query is dependent on a value that isn't ready (e.g., user.uid is null/undefined), we must wait.
+      // Do not proceed to execute a query with a null/undefined value, as it will return no results.
+      if (!value) {
          setLoading(true); // Keep loading state
-         setData(null); // Clear previous data to avoid showing stale results
-         return;
+         setData(null); // Ensure no stale data is shown
+         return; // Wait for user.uid to be available
       }
       q = query(collectionRef, where(field, op, value));
     } else {

@@ -4,17 +4,14 @@ service cloud.firestore {
 
     // --- FUNCIONES DE AYUDA ---
     
-    // Verifica si el usuario está autenticado
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Obtiene el rol del usuario actual desde la colección 'usuarios'
     function getRole() {
       return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol;
     }
 
-    // Funciones específicas por rol
     function isSuperAdmin() {
       return isAuthenticated() && getRole() == 'super_admin';
     }
@@ -26,44 +23,38 @@ service cloud.firestore {
     function isVendedor() {
       return isAuthenticated() && getRole() == 'vendedor';
     }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
 
     // --- REGLAS POR COLECCIÓN ---
 
-    // Colección de Usuarios: 
     match /usuarios/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      // Solo un Admin o Super Admin pueden crear usuarios.
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow create: if isAdmin();
-      // Solo un Super Admin puede actualizar o eliminar perfiles.
       allow update, delete: if isSuperAdmin();
     }
 
-    // Colección de Productos e Inventario
     match /productos/{productoId} {
-      // Vendedores pueden leer para consultar stock
       allow read: if isAuthenticated();
-      // Admins y Super Admins pueden crear, modificar stock, precios, etc.
       allow create: if isAdmin() && request.resource.data.creadoPor == request.auth.uid && request.resource.data.actualizadoPor == request.auth.uid && request.resource.data.fechaCreacion == request.time && request.resource.data.fechaActualizacion == request.time;
-      allow update: if isAdmin() && request.resource.data.actualizadoPor == request.auth.uid && request.resource.data.fechaActualizacion == request.time;
+      // Vendedores pueden actualizar solo el stock.
+      // Admins pueden actualizar cualquier campo.
+      allow update: if (isVendedor() && request.resource.data.stock != resource.data.stock && request.resource.data.keys().removeAll(['stock']).size() == 0) || (isAdmin() && request.resource.data.actualizadoPor == request.auth.uid && request.resource.data.fechaActualizacion == request.time);
       allow delete: if isAdmin();
     }
 
-    // Colección de Ventas
     match /ventas/{ventaId} {
-      // Admins pueden ver todas las ventas, vendedores solo las suyas.
       allow read: if isAdmin() || (isVendedor() && resource.data.vendedorId == request.auth.uid);
-      // Cualquier usuario autenticado puede crear una venta, pero debe registrarse como el vendedor.
       allow create: if isAuthenticated() && request.resource.data.vendedorId == request.auth.uid && request.resource.data.fecha == request.time;
-      // Solo Admins pueden anular o editar ventas
       allow update, delete: if isAdmin();
     }
 
-    // Colección de Compras y Gastos
     match /compras/{compraId} {
       allow read, write: if isAdmin();
     }
 
-    // Reportes Financieros
     match /reportes_financieros/{reporteId} {
       allow read, write: if isAdmin();
     }

@@ -5,6 +5,7 @@ import type { Product } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, TriangleAlert } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { useCartStore } from "@/store/cart"
 
 type ProductCardProps = {
   product: Product;
@@ -12,9 +13,11 @@ type ProductCardProps = {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const isLowStock = product.stock <= product.stockMinimo;
+  const addToCart = useCartStore((state) => state.addToCart);
 
   return (
     <Card className="overflow-hidden group cursor-pointer relative shadow-md hover:shadow-lg transition-shadow duration-300">
+      <button className="absolute inset-0 z-20" onClick={() => addToCart(product)} aria-label={`Agregar ${product.nombre} al carrito`}/>
       <div className="overflow-hidden">
         <Image
           src={product.imageUrl}
@@ -31,7 +34,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
       )}
        <div className="absolute top-2 left-2 z-10">
-          <Badge variant="secondary">{product.stock} en stock</Badge>
+          <Badge variant={product.stock > 0 ? "secondary" : "destructive"}>{product.stock} en stock</Badge>
       </div>
 
       <CardContent className="p-3">
@@ -40,7 +43,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       <CardFooter className="p-3 pt-0">
         <p className="text-lg font-bold w-full">${product.precioVenta.toFixed(2)}</p>
       </CardFooter>
-      <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+      <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none">
         <Button variant="secondary" size="lg" className="font-semibold">
           <PlusCircle className="mr-2" />
           Agregar

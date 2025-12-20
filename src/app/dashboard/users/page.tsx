@@ -66,13 +66,15 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 
 const userSchema = z.object({
+  nombre: z.string().min(1, 'El nombre es requerido.'),
   email: z.string().email('Email inválido.'),
+  telefono: z.string().optional(),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.'),
   rol: z.enum(['admin', 'vendedor']),
 });
 
 const editUserSchema = z.object({
-  rol: z.enum(['admin', 'vendedor']),
+  rol: z.enum(['admin', 'vendedor', 'super_admin']),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -95,7 +97,9 @@ export default function UsersPage() {
   const newUserForm = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
+      nombre: '',
       email: '',
+      telefono: '',
       password: '',
       rol: 'vendedor',
     },
@@ -109,7 +113,8 @@ export default function UsersPage() {
 
   const filteredUsers = useMemo(() => {
     return users?.filter((user) =>
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [users, searchTerm]);
   
@@ -121,18 +126,11 @@ export default function UsersPage() {
       setIsNewUserDialogOpen(false);
       newUserForm.reset();
     } catch (error: any) {
-        let description = 'Ocurrió un error inesperado al crear el usuario.';
-        if (error.code === 'auth/email-already-in-use') {
-            description = 'Este email ya está registrado. No se pudo crear el usuario.';
-        } else if (error.code === 'auth/weak-password') {
-            description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
-        }
-        
-        toast({
-            variant: 'destructive',
-            title: 'Error al crear usuario',
-            description: description,
-        });
+      toast({
+          variant: 'destructive',
+          title: 'Error al crear usuario',
+          description: error.message,
+      });
     }
   };
 
@@ -164,7 +162,7 @@ export default function UsersPage() {
   
   const openEditDialog = (user: AppUser) => {
     setSelectedUser(user);
-    editUserForm.setValue('rol', user.rol === 'super_admin' ? 'admin' : user.rol);
+    editUserForm.setValue('rol', user.rol);
     setIsEditUserDialogOpen(true);
   };
   
@@ -220,7 +218,7 @@ export default function UsersPage() {
           <div className="relative mt-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-              placeholder="Buscar por email..."
+              placeholder="Buscar por nombre o email..."
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -232,7 +230,9 @@ export default function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Nombre</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Teléfono</TableHead>
                   <TableHead>Rol</TableHead>
                   {isSuperAdmin && <TableHead className="text-right">Acciones</TableHead>}
                 </TableRow>
@@ -240,14 +240,14 @@ export default function UsersPage() {
               <TableBody>
                 {loading && (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center">
+                    <TableCell colSpan={5} className="text-center">
                       Cargando...
                     </TableCell>
                   </TableRow>
                 )}
                 {!loading && filteredUsers?.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center">
+                    <TableCell colSpan={5} className="text-center">
                       No se encontraron usuarios.
                     </TableCell>
                   </TableRow>
@@ -255,7 +255,9 @@ export default function UsersPage() {
                 {!loading &&
                   filteredUsers?.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.email}</TableCell>
+                      <TableCell className="font-medium">{user.nombre || '-'}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.telefono || '-'}</TableCell>
                       <TableCell>
                           <Badge 
                               variant={user.rol === 'super_admin' ? 'default' : user.rol === 'admin' ? 'secondary' : 'outline'}
@@ -304,6 +306,19 @@ export default function UsersPage() {
           </DialogHeader>
           <Form {...newUserForm}>
             <form onSubmit={newUserForm.handleSubmit(onNewUserSubmit)} className="space-y-4 py-4">
+               <FormField
+                control={newUserForm.control}
+                name="nombre"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre Completo</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ej: Juan Pérez" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={newUserForm.control}
                 name="email"
@@ -317,12 +332,25 @@ export default function UsersPage() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={newUserForm.control}
+                name="telefono"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Teléfono</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ej: 55 1234 5678" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
                <FormField
                 control={newUserForm.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contraseña Temporal</FormLabel>
+                    <FormLabel>Contraseña</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••" {...field} />
                     </FormControl>
@@ -335,7 +363,7 @@ export default function UsersPage() {
                   name="rol"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Rol</FormLabel>
+                      <FormLabel>Rol Inicial</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -392,6 +420,7 @@ export default function UsersPage() {
                         <SelectContent>
                           <SelectItem value="vendedor">Vendedor</SelectItem>
                           <SelectItem value="admin">Administrador</SelectItem>
+                          <SelectItem value="super_admin">Super Admin</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

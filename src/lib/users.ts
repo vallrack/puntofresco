@@ -1,30 +1,15 @@
 'use client';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 
 type NewUserData = {
+  nombre: string;
   email: string;
+  telefono?: string;
   password?: string;
-  rol: 'admin' | 'vendedor';
+  rol?: 'admin' | 'vendedor';
 };
-
-// Crear solo el documento en Firestore (esta función ahora es para casos de reparación)
-export async function createUserDocument(uid: string, email: string, rol: 'admin' | 'vendedor') {
-  const { firestore } = initializeFirebase();
-  const userDocRef = doc(firestore, 'usuarios', uid);
-  
-  const docSnap = await getDoc(userDocRef);
-  if (docSnap.exists()) {
-    throw new Error('Un perfil para este usuario ya existe en la base de datos.');
-  }
-
-  await setDoc(userDocRef, {
-    email: email,
-    rol: rol,
-  });
-}
-
 
 // Crear un nuevo usuario en Auth y Firestore
 export async function createUser(userData: NewUserData): Promise<any> {
@@ -42,17 +27,25 @@ export async function createUser(userData: NewUserData): Promise<any> {
     // 2. Crear el documento del usuario en Firestore
     const userDocRef = doc(firestore, 'usuarios', user.uid);
     await setDoc(userDocRef, {
+      nombre: userData.nombre,
       email: userData.email,
-      rol: userData.rol,
+      telefono: userData.telefono || '',
+      // Asigna rol 'vendedor' por defecto si no se especifica
+      rol: userData.rol || 'vendedor',
     });
 
     return user; // Devuelve el objeto de usuario si todo fue exitoso
   } catch (error: any) {
     console.error("Error creando usuario:", error);
-    // Propaga el error para que el componente que llama lo maneje
-    // El código de error será usado para mostrar un mensaje específico
-    const newError: any = new Error(error.message);
-    newError.code = error.code;
-    throw newError;
+    
+    let friendlyMessage = 'Ocurrió un error inesperado al crear el usuario.';
+    if (error.code === 'auth/email-already-in-use') {
+        friendlyMessage = 'El correo electrónico ya está en uso por otra cuenta.';
+    } else if (error.code === 'auth/weak-password') {
+        friendlyMessage = 'La contraseña es demasiado débil (mínimo 6 caracteres).';
+    }
+
+    // Propaga un error con un mensaje amigable
+    throw new Error(friendlyMessage);
   }
 }

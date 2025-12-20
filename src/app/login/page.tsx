@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { ShoppingBasket } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { signInWithEmailAndPassword, setDoc as setAuthDoc } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +45,7 @@ export default function LoginPage() {
         // The exception is the initial super_admin.
         if (email === 'vallrack67@gmail.com') {
            // This should only happen once for the very first login
-           await setDoc(userDocRef, { rol: 'super_admin', email: user.email });
+           await setDoc(userDocRef, { rol: 'super_admin', email: user.email, nombre: 'Super Admin' });
         } else {
           throw new Error('Usuario no autorizado. Contacta al administrador.');
         }
@@ -117,22 +117,14 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@puntofresco.com"
+                  placeholder="tu@email.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Contraseña</Label>
-                  <Link
-                    href="#"
-                    className="ml-auto inline-block text-sm underline"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </Link>
-                </div>
+                <Label htmlFor="password">Contraseña</Label>
                 <Input
                   id="password"
                   type="password"
@@ -149,10 +141,19 @@ export default function LoginPage() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="text-center text-sm">
-            <p className="w-full">
-              ¿No tienes una cuenta? Contacta a tu administrador.
+          <CardFooter className="flex flex-col gap-4 text-center text-sm">
+             <p className="w-full">
+              ¿Nuevo usuario?{" "}
+              <Link href="/register" className="underline font-medium">
+                Regístrate aquí
+              </Link>
             </p>
+            <Link
+                href="#"
+                className="text-sm underline text-muted-foreground"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
           </CardFooter>
         </Card>
       </div>

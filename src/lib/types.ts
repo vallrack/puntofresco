@@ -66,7 +66,9 @@ export interface Purchase {
 
 export interface User {
   id: string;
+  nombre: string;
   email: string;
+  telefono?: string;
   rol: 'super_admin' | 'admin' | 'vendedor';
 }
 

@@ -120,7 +120,6 @@ export default function UsersPage() {
       forceUpdate();
       setIsNewUserDialogOpen(false);
     } catch (error: any) {
-        console.error(error);
         toast({
             variant: 'destructive',
             title: 'Error al crear usuario',

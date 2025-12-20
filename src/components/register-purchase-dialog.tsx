@@ -3,55 +3,19 @@ import { useState, useMemo, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-} from '@/components/ui/command';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useCollection } from '@/firebase';
-import type { Supplier, Product, PurchaseItem } from '@/lib/types';
+import { useCollection, useFirestore } from '@/firebase';
+import type { Supplier, Product } from '@/lib/types';
 import { Trash2, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { processPurchase } from '@/lib/purchases';
-import { useFirestore } from '@/firebase';
 
 interface RegisterPurchaseDialogProps {
   isOpen: boolean;
@@ -73,6 +37,7 @@ const purchaseSchema = z.object({
 
 type PurchaseFormValues = z.infer<typeof purchaseSchema>;
 
+
 export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegistered }: RegisterPurchaseDialogProps) {
   const { data: suppliers, loading: loadingSuppliers } = useCollection<Supplier>({ path: 'proveedores' });
   const { data: products, loading: loadingProducts } = useCollection<Product>({ path: 'productos' });
@@ -91,24 +56,22 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'items',
-    keyName: 'key',
   });
   
   const watchedItems = form.watch('items');
-  const total = useMemo(() => {
-    return watchedItems.reduce((acc, item) => acc + (item.cantidad || 0) * (item.costoUnitario || 0), 0);
+  const totalGeneral = useMemo(() => {
+    return watchedItems.reduce((acc, item) => acc + (item.cantidad * item.costoUnitario), 0);
   }, [watchedItems]);
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     if (!productSearchTerm) return [];
-    // Don't show products that are already in the list
     const currentItemIds = fields.map(item => item.productId);
     return products.filter(p => 
       !currentItemIds.includes(p.id) &&
       (p.nombre.toLowerCase().includes(productSearchTerm.toLowerCase()) || 
        p.sku.toLowerCase().includes(productSearchTerm.toLowerCase()))
-    ).slice(0, 5); // Limit results for performance
+    ).slice(0, 5);
   }, [products, productSearchTerm, fields]);
 
   const addProductToPurchase = (product: Product) => {
@@ -116,31 +79,34 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
       productId: product.id,
       nombre: product.nombre,
       cantidad: 1,
-      costoUnitario: product.precioCompra, // Default to last purchase price
+      costoUnitario: product.precioCompra,
     });
     setProductSearchTerm('');
   };
 
   const onSubmit = async (values: PurchaseFormValues) => {
-    if (!firestore) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo conectar a la base de datos.' });
-        return;
-    }
-    const purchaseData = {
-      proveedorId: values.proveedorId,
-      items: values.items,
-      total: total,
-    };
+    if (!firestore) return;
+
     try {
-        await processPurchase(firestore, purchaseData);
-        onPurchaseRegistered();
-    } catch(error: any) {
-        console.error("Error al registrar la compra:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Error al registrar la compra',
-            description: error.message || 'Ocurrió un problema al guardar los datos.'
-        })
+      const supplier = suppliers?.find(s => s.id === values.proveedorId);
+      
+      const purchaseData = {
+        proveedorId: values.proveedorId,
+        proveedorNombre: supplier?.nombre || "Desconocido",
+        total: totalGeneral,
+        items: values.items.map(item => ({
+          ...item,
+          subtotal: item.cantidad * item.costoUnitario
+        }))
+      };
+
+      await processPurchase(firestore, purchaseData);
+      toast({ title: 'Compra registrada', description: 'El stock ha sido actualizado.' });
+      onPurchaseRegistered();
+      onClose();
+    } catch (error: any) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Error al registrar', description: error.message });
     }
   };
   
@@ -244,10 +210,10 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
                                     </TableRow>
                                 ) : (
                                     fields.map((item, index) => {
-                                        const itemValues = watchedItems[index];
-                                        const subtotal = (itemValues?.cantidad || 0) * (itemValues?.costoUnitario || 0);
+                                      const itemValues = watchedItems[index];
+                                      const subtotal = (itemValues?.cantidad || 0) * (itemValues?.costoUnitario || 0);
                                         return (
-                                            <TableRow key={item.key}>
+                                            <TableRow key={item.id}>
                                                 <TableCell className="font-medium">{item.nombre}</TableCell>
                                                 <TableCell>
                                                     <Input 
@@ -264,7 +230,7 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
                                                         className="h-8"
                                                     />
                                                 </TableCell>
-                                                <TableCell className="text-right">
+                                                <TableCell className="text-right font-bold">
                                                     ${subtotal.toFixed(2)}
                                                 </TableCell>
                                                 <TableCell>
@@ -286,8 +252,8 @@ export default function RegisterPurchaseDialog({ isOpen, onClose, onPurchaseRegi
             </div>
             
             <div className="flex justify-end items-center gap-4 pt-4">
-                <p className="text-lg font-bold">Total Compra:</p>
-                <p className="text-2xl font-extrabold text-primary">${total.toFixed(2)}</p>
+              <p className="text-lg font-bold">Total Compra:</p>
+              <p className="text-2xl font-extrabold text-primary">${totalGeneral.toFixed(2)}</p>
             </div>
 
             <DialogFooter>

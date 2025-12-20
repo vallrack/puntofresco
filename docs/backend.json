@@ -85,7 +85,11 @@
         "nombre",
         "sku",
         "precioVenta",
-        "stock"
+        "stock",
+        "precioCompra",
+        "stockMinimo",
+        "categoria",
+        "imageUrl"
       ]
     },
     "venta": {

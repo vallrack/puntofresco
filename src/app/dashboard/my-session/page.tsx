@@ -210,14 +210,14 @@ export default function MySessionPage() {
       )}
 
       {/* Estilos CSS para impresión */}
-      <style jsx global>{`
+      <style jsx global>{\`
         @media print {
           body * { visibility: hidden; }
-          .print\:block, .print\:block * { visibility: visible; }
-          .print\:block { position: absolute; left: 0; top: 0; width: 100%; }
-          .print\:hidden { display: none !important; }
+          .print\\:block, .print\\:block * { visibility: visible; }
+          .print\\:block { position: absolute; left: 0; top: 0; width: 100%; }
+          .print\\:hidden { display: none !important; }
         }
-      `}</style>
+      \`}</style>
     </div>
   );
 }

@@ -3,12 +3,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- FUNCIONES DE AYUDA ---
-    
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Obtener los datos del usuario actual de forma segura
     function getUserData() {
       return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
     }
@@ -21,10 +19,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated() && (
-        getUserData().rol == 'admin' || 
-        isSuperAdmin()
-      );
+      return isAuthenticated() && (getUserData().rol == 'admin' || isSuperAdmin());
     }
     
     function isVendedor() {
@@ -40,8 +35,7 @@ service cloud.firestore {
     match /usuarios/{userId} {
       allow read: if isAuthenticated();
       allow create: if (isAuthenticated() && isOwner(userId) && !('rol' in request.resource.data)) || isSuperAdmin();
-      allow update: if isSuperAdmin() || 
-                     (isAuthenticated() && isOwner(userId) && request.resource.data.rol == resource.data.rol);
+      allow update: if isSuperAdmin() || (isAuthenticated() && isOwner(userId) && request.resource.data.rol == resource.data.rol);
       allow delete: if isSuperAdmin();
     }
 

@@ -121,7 +121,7 @@ export default function UsersPage() {
   const onNewUserSubmit = async (values: UserFormValues) => {
     try {
       await createUser(values);
-      toast({ title: 'Éxito', description: 'Usuario creado correctamente.' });
+      toast({ title: 'Éxito', description: 'Usuario creado y registrado correctamente.' });
       forceUpdate();
       setIsNewUserDialogOpen(false);
       newUserForm.reset();
@@ -149,6 +149,8 @@ export default function UsersPage() {
 
   const handleDeleteUser = async () => {
     if (!selectedUser || !firestore) return;
+    // Nota: Esta función solo elimina de Firestore. Para una eliminación completa,
+    // se necesitaría una Cloud Function para eliminar el usuario de Firebase Auth.
     try {
         const userRef = doc(firestore, 'usuarios', selectedUser.id);
         await deleteDoc(userRef);
@@ -201,7 +203,7 @@ export default function UsersPage() {
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle>Usuarios</CardTitle>
               <CardDescription>
@@ -209,7 +211,7 @@ export default function UsersPage() {
               </CardDescription>
             </div>
             {isSuperAdmin && (
-              <Button onClick={() => setIsNewUserDialogOpen(true)}>
+              <Button onClick={() => setIsNewUserDialogOpen(true)} className="w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Nuevo Usuario
               </Button>

@@ -8,10 +8,10 @@ type NewUserData = {
   email: string;
   telefono?: string;
   password?: string;
-  rol?: 'admin' | 'vendedor';
+  rol: 'admin' | 'vendedor'; // Rol es requerido cuando lo crea un admin
 };
 
-// Crear un nuevo usuario en Auth y Firestore
+// Crear un nuevo usuario en Auth y Firestore (solo para super_admin)
 export async function createUser(userData: NewUserData): Promise<any> {
   const { auth, firestore } = initializeFirebase();
 
@@ -21,17 +21,18 @@ export async function createUser(userData: NewUserData): Promise<any> {
 
   try {
     // 1. Crear el usuario en Firebase Authentication
+    // Esta llamada fallará si el email ya existe, lo cual es manejado en la UI
     const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
     const user = userCredential.user;
 
-    // 2. Crear el documento del usuario en Firestore
+    // 2. Crear el documento del usuario en Firestore. Esto SOLO lo puede hacer un super_admin
+    // gracias a las nuevas reglas de seguridad.
     const userDocRef = doc(firestore, 'usuarios', user.uid);
     await setDoc(userDocRef, {
       nombre: userData.nombre,
       email: userData.email,
       telefono: userData.telefono || '',
-      // Asigna rol 'vendedor' por defecto si no se especifica
-      rol: userData.rol || 'vendedor',
+      rol: userData.rol, // El rol es asignado directamente por el super_admin
     });
 
     return user; // Devuelve el objeto de usuario si todo fue exitoso

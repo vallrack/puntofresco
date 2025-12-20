@@ -8,20 +8,27 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getRole() {
-      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol;
+    // Obtener los datos del usuario actual de forma segura
+    function getUserData() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
     }
 
     function isSuperAdmin() {
-      return isAuthenticated() && getRole() == 'super_admin';
+      return isAuthenticated() && (
+        getUserData().rol == 'super_admin' || 
+        request.auth.token.email == 'vallrack67@gmail.com'
+      );
     }
 
     function isAdmin() {
-      return isAuthenticated() && (getRole() == 'admin' || getRole() == 'super_admin');
+      return isAuthenticated() && (
+        getUserData().rol == 'admin' || 
+        isSuperAdmin()
+      );
     }
     
     function isVendedor() {
-      return isAuthenticated() && getRole() == 'vendedor';
+      return isAuthenticated() && getUserData().rol == 'vendedor';
     }
     
     function isOwner(userId) {
@@ -31,9 +38,21 @@ service cloud.firestore {
     // --- REGLAS POR COLECCIÓN ---
 
     match /usuarios/{userId} {
+      // 1. Cualquiera puede leer su propio perfil, Super Admin lee todos.
       allow read: if isSuperAdmin() || (isAuthenticated() && isOwner(userId));
+      
+      // 2. Creación: Solo Super Admin puede crear usuarios.
       allow create: if isSuperAdmin();
-      allow update, delete: if isSuperAdmin();
+
+      // 3. Edición: 
+      // - El Super Admin puede cambiar TODO (incluyendo roles).
+      // - El usuario puede cambiar sus datos (nombre, foto), PERO NO su rol.
+      allow update: if isSuperAdmin() || (
+        isAuthenticated() && isOwner(userId) && 
+        request.resource.data.rol == resource.data.rol
+      );
+
+      allow delete: if isSuperAdmin();
     }
 
     match /productos/{productoId} {

@@ -25,6 +25,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createUser } from '@/lib/users';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { initializeFirebase } from '@/firebase';
 
 const registerSchema = z.object({
   nombre: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
@@ -38,6 +40,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { auth } = initializeFirebase();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -51,25 +54,27 @@ export default function RegisterPage() {
 
   const onSubmit = async (values: RegisterFormValues) => {
     try {
-      await createUser({
-        nombre: values.nombre,
-        email: values.email,
-        telefono: values.telefono,
-        password: values.password,
-        // El rol se asigna por defecto en la función `createUser`
-      });
+      // Con las nuevas reglas, el registro público solo crea la cuenta en Auth.
+      // El documento en Firestore lo debe crear un super_admin.
+      await createUserWithEmailAndPassword(auth, values.email, values.password);
       
       toast({
-        title: '¡Registro Exitoso!',
-        description: 'Tu cuenta ha sido creada. Ahora puedes iniciar sesión.',
+        title: '¡Pre-registro Exitoso!',
+        description: 'Tu cuenta de acceso ha sido creada. Un administrador debe asignarte un rol para que puedas ingresar.',
       });
       router.push('/login');
 
     } catch (error: any) {
+      let friendlyMessage = 'No se pudo completar el registro.';
+       if (error.code === 'auth/email-already-in-use') {
+        friendlyMessage = 'El correo electrónico ya está en uso por otra cuenta.';
+      } else if (error.code === 'auth/weak-password') {
+          friendlyMessage = 'La contraseña es demasiado débil (mínimo 6 caracteres).';
+      }
       toast({
         variant: 'destructive',
         title: 'Error en el registro',
-        description: error.message || 'No se pudo completar el registro.',
+        description: friendlyMessage,
       });
     }
   };
@@ -87,7 +92,7 @@ export default function RegisterPage() {
               Crear una Cuenta
             </CardTitle>
             <CardDescription>
-              Regístrate para empezar a gestionar tu punto de venta.
+              Regístrate y espera la aprobación de un administrador.
             </CardDescription>
           </CardHeader>
           <CardContent>

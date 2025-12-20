@@ -5,7 +5,6 @@ import { getStorage } from 'firebase-admin/storage';
 let adminApp: App | undefined;
 
 // TEMPORAL: Credenciales hardcodeadas para desarrollo
-// TODO: Mover a variables de entorno en producción
 const FIREBASE_CONFIG = {
   projectId: "punto-fresco-f0c35",
   clientEmail: "firebase-adminsdk-fbsvc@punto-fresco-f0c35.iam.gserviceaccount.com",
@@ -14,50 +13,17 @@ const FIREBASE_CONFIG = {
 };
 
 export function getAdminApp() {
-  // Si ya existe, retornarlo
-  if (adminApp) {
-    console.log('♻️  Usando app de Firebase Admin existente');
-    return adminApp;
-  }
-
-  // Si ya hay apps inicializadas, usar la primera
-  const existingApps = getApps();
-  if (existingApps.length > 0) {
-    console.log('♻️  Usando app de Firebase Admin existente (global)');
-    adminApp = existingApps[0];
-    return adminApp;
-  }
-
-  try {
+  if (getApps().length === 0) {
     console.log('🔧 Inicializando Firebase Admin...');
-    console.log('📋 Config:', {
-      projectId: FIREBASE_CONFIG.projectId,
-      clientEmail: FIREBASE_CONFIG.clientEmail,
-      storageBucket: FIREBASE_CONFIG.storageBucket,
-      privateKeyLength: FIREBASE_CONFIG.privateKey.length,
-    });
-
-    adminApp = initializeApp({
-      credential: cert({
-        projectId: FIREBASE_CONFIG.projectId,
-        clientEmail: FIREBASE_CONFIG.clientEmail,
-        privateKey: FIREBASE_CONFIG.privateKey,
-      }),
+    initializeApp({
+      credential: cert(FIREBASE_CONFIG),
       storageBucket: FIREBASE_CONFIG.storageBucket,
     });
-
     console.log('✅ Firebase Admin inicializado correctamente');
-    return adminApp;
-  } catch (error: any) {
-    console.error('❌ Error inicializando Firebase Admin:', {
-      message: error.message,
-      stack: error.stack,
-    });
-    throw error;
   }
+  return getApps()[0];
 }
 
 export function getAdminStorage() {
-  const app = getAdminApp();
-  return getStorage(app);
+  return getStorage(getAdminApp());
 }

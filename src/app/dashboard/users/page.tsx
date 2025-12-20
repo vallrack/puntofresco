@@ -114,10 +114,11 @@ export default function UsersPage() {
   const filteredUsers = useMemo(() => {
     if (!users) return [];
     return users.filter((user) =>
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
+        user.id !== currentUser?.uid && // Excluir al super_admin actual de la lista
+        (user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         user.nombre?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-  }, [users, searchTerm]);
+  }, [users, searchTerm, currentUser]);
   
  const onNewUserSubmit = async (values: UserFormValues) => {
     try {

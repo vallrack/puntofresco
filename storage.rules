@@ -7,18 +7,19 @@ service firebase.storage {
     // al bucket para permitir la subida de archivos desde el navegador.
     // Ejecuta el siguiente comando en tu terminal para aplicarla,
     // usando el archivo cors.json en la raíz del proyecto:
-    // gsutil cors set cors.json gs://punto-fresco-f0c35.appspot.com
+    // gcloud storage buckets update gs://punto-fresco-f0c35.appspot.com --cors-file=cors.json
     
     // Reglas para las imágenes de productos.
-    match /products/{userId}/{allPaths=**} {
+    match /products/{userId}/{fileName} {
        // Permite la lectura pública para que cualquiera pueda ver las imágenes
        allow read: if true;
 
        // Permite escrituras solo si el usuario está autenticado,
        // la ruta coincide con su ID, y el archivo cumple con las restricciones.
-      allow write: if request.auth != null && request.auth.uid == userId
-                    && request.resource.size < 5 * 1024 * 1024 // Max 5MB
-                    && request.resource.contentType.matches('image/.*'); // Solo imágenes
+      allow write: if request.auth != null && 
+                      request.auth.uid == userId &&
+                      request.resource.size < 5 * 1024 * 1024 && // Max 5MB
+                      request.resource.contentType.matches('image/.*');
     }
   }
 }

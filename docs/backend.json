@@ -5,13 +5,22 @@
       "description": "Representa un usuario del sistema.",
       "type": "object",
       "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Correo electrónico del usuario."
+        },
+        "password": {
+          "type": "string",
+          "description": "Contraseña para el nuevo usuario (solo para la creación)."
+        },
         "rol": {
           "type": "string",
           "description": "Rol del usuario en el sistema.",
           "enum": ["super_admin", "admin", "empleado"]
         }
       },
-      "required": ["rol"]
+      "required": ["email", "rol"]
     },
     "producto": {
       "title": "Producto",
@@ -45,43 +54,4 @@
     "reporte_financiero": {
       "title": "Reporte Financiero",
       "description": "Representa un reporte financiero.",
-      "type": "object",
-      "properties": {}
-    }
-  },
-  "auth": {
-    "providers": ["password"]
-  },
-  "firestore": {
-    "/usuarios/{userId}": {
-      "schema": {
-        "$ref": "#/entities/usuario"
-      },
-      "description": "Perfiles de usuario y roles"
-    },
-    "/productos/{productoId}": {
-      "schema": {
-        "$ref": "#/entities/producto"
-      },
-      "description": "Productos del inventario"
-    },
-    "/ventas/{ventaId}": {
-      "schema": {
-        "$ref": "#/entities/venta"
-      },
-      "description": "Historial de ventas"
-    },
-    "/compras/{compraId}": {
-      "schema": {
-        "$ref": "#/entities/compra"
-      },
-      "description": "Registro de compras a proveedores"
-    },
-    "/reportes_financieros/{reporteId}": {
-      "schema": {
-        "$ref": "#/entities/reporte_financiero"
-      },
-      "description": "Reportes financieros"
-    }
-  }
-}
+      "type":_

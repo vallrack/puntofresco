@@ -14,7 +14,7 @@ import { ShoppingBasket } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { initializeFirebase } from '@/firebase';
@@ -35,22 +35,19 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check if user document exists, if not create it
+      // Check if user document exists in Firestore
       const userDocRef = doc(firestore, 'usuarios', user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
       if (!userDocSnap.exists()) {
-        // User document doesn't exist, create it.
-        // Assign 'super_admin' role if the email matches.
-        const userRole = email === 'vallrack67@gmail.com' ? 'super_admin' : 'empleado';
-        await setDoc(userDocRef, {
-          rol: userRole,
-          email: user.email,
-        });
-        toast({
-          title: 'Perfil creado',
-          description: `Tu perfil ha sido creado con el rol: ${userRole}.`,
-        });
+        // If the user doc doesn't exist, they are not authorized.
+        // The exception is the initial super_admin.
+        if (email === 'vallrack67@gmail.com') {
+           // This should only happen once for the very first login
+           await setDoc(userDocRef, { rol: 'super_admin', email: user.email });
+        } else {
+          throw new Error('Usuario no autorizado. Contacta al administrador.');
+        }
       }
       
       toast({
@@ -61,24 +58,28 @@ export default function LoginPage() {
 
     } catch (err: any) {
       let errorMessage = 'Ocurrió un error al iniciar sesión.';
-      switch (err.code) {
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-        case 'auth/invalid-credential':
-          errorMessage = 'El correo electrónico o la contraseña son incorrectos.';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'El formato del correo electrónico no es válido.';
-          break;
-        case 'auth/user-disabled':
-          errorMessage = 'Este usuario ha sido deshabilitado.';
-          break;
-        case 'auth/too-many-requests':
-          errorMessage = 'Demasiados intentos de inicio de sesión. Inténtalo de nuevo más tarde.';
-          break;
-        default:
-          errorMessage = err.message || 'Ha ocurrido un problema inesperado. Por favor, inténtalo más tarde.';
-          break;
+      if (err.message === 'Usuario no autorizado. Contacta al administrador.') {
+        errorMessage = err.message;
+      } else {
+        switch (err.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            errorMessage = 'El correo electrónico o la contraseña son incorrectos.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'El formato del correo electrónico no es válido.';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'Este usuario ha sido deshabilitado.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Demasiados intentos de inicio de sesión. Inténtalo de nuevo más tarde.';
+            break;
+          default:
+            errorMessage = err.message || 'Ha ocurrido un problema inesperado. Por favor, inténtalo más tarde.';
+            break;
+        }
       }
       setError(errorMessage);
       toast({
@@ -144,10 +145,3 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="text-center text-sm">
           <p className="w-full">
-            ¿No tienes una cuenta? Contacta al administrador.
-          </p>
-        </CardFooter>
-      </Card>
-    </div>
-  );
-}

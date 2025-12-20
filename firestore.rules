@@ -28,11 +28,11 @@ service cloud.firestore {
 
     // Colección de Usuarios: 
     // - Un usuario puede leer su propio perfil.
-    // - Un usuario autenticado puede crear su propio perfil.
-    // - Solo un Super Admin puede actualizar o eliminar perfiles.
+    // - Solo un Admin o Super Admin pueden crear, actualizar o eliminar perfiles.
+    // - Hay una excepción para que el primer Super Admin pueda crear su propio perfil.
     match /usuarios/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAdmin() || (request.auth.uid == userId && request.resource.data.rol == 'super_admin');
       allow update, delete: if isSuperAdmin();
     }
 
@@ -57,8 +57,4 @@ service cloud.firestore {
     }
 
     // Reportes Financieros (Ganancias, Pérdidas, Balances)
-    match /reportes_financieros/{reporteId} {
-      allow read, write: if isAdmin();
-    }
-  }
-}
+    

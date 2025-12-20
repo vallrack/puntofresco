@@ -60,9 +60,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { createUser } from '@/lib/users';
+import { createUser, createUserDocument } from '@/lib/users';
 import { Badge } from '@/components/ui/badge';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, getDocs, collection, query, where } from 'firebase/firestore';
 
 
 const userSchema = z.object({
@@ -120,11 +120,19 @@ export default function UsersPage() {
       forceUpdate();
       setIsNewUserDialogOpen(false);
     } catch (error: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Error al crear usuario',
-            description: error.message,
-        });
+        if (error.code === 'auth/email-already-in-use') {
+            toast({
+                variant: 'destructive',
+                title: 'Email en uso',
+                description: 'Este email ya está registrado. No se pudo crear el usuario.',
+            });
+        } else {
+             toast({
+                variant: 'destructive',
+                title: 'Error al crear usuario',
+                description: error.message,
+            });
+        }
     }
   };
 

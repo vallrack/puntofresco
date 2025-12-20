@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Search, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Search, Edit, Trash2, Upload } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,15 +46,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { addProduct } from "@/lib/products";
+import { uploadImage } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 
@@ -66,7 +59,7 @@ const productSchema = z.object({
   precioVenta: z.coerce.number().min(0, "El precio no puede ser negativo."),
   stock: z.coerce.number().int("El stock debe ser un número entero."),
   stockMinimo: z.coerce.number().int("El stock mínimo debe ser un número entero."),
-  imageId: z.string().min(1, "Debes seleccionar una imagen."),
+  image: z.any().refine(files => files?.length == 1, "La imagen es requerida."),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -77,6 +70,7 @@ export default function ProductsPage() {
   const { user } = useUser();
   const { data: userData } = useDoc<{ rol: string }>({ path: 'usuarios', id: user?.uid });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<ProductFormValues>({
@@ -89,7 +83,7 @@ export default function ProductsPage() {
       precioVenta: 0,
       stock: 0,
       stockMinimo: 0,
-      imageId: "",
+      image: undefined,
     },
   });
 
@@ -103,6 +97,19 @@ export default function ProductsPage() {
     );
   }, [products, searchTerm]);
   
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
+    }
+  };
+
   const onSubmit = async (values: ProductFormValues) => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'Debes iniciar sesión.' });
@@ -110,28 +117,34 @@ export default function ProductsPage() {
     }
 
     try {
-      const selectedImage = PlaceHolderImages.find(img => img.id === values.imageId);
-      if (!selectedImage) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Imagen no válida.' });
-        return;
-      }
-
+      const imageFile = values.image[0] as File;
+      const imageUrl = await uploadImage(imageFile, `products/${user.uid}`);
+      
       await addProduct({
         ...values,
-        imageUrl: selectedImage.imageUrl,
-        imageHint: selectedImage.imageHint,
+        imageUrl: imageUrl,
+        imageHint: "custom product", // Or generate a hint if you want
         creadoPor: user.uid,
         actualizadoPor: user.uid,
       });
 
       toast({ title: 'Éxito', description: 'Producto agregado correctamente.' });
       form.reset();
+      setImagePreview(null);
       setIsDialogOpen(false);
     } catch (error) {
       console.error(error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo agregar el producto.' });
     }
   };
+
+  const onDialogClose = (open: boolean) => {
+    if (!open) {
+      form.reset();
+      setImagePreview(null);
+    }
+    setIsDialogOpen(open);
+  }
 
 
   return (
@@ -227,7 +240,7 @@ export default function ProductsPage() {
         </CardContent>
       </Card>
       
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={onDialogClose}>
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>Nuevo Producto</DialogTitle>
@@ -285,7 +298,7 @@ export default function ProductsPage() {
                       <FormItem>
                         <FormLabel>Precio Compra</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="15.00" {...field} />
+                          <Input type="number" step="0.01" placeholder="15.00" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -298,7 +311,7 @@ export default function ProductsPage() {
                       <FormItem>
                         <FormLabel>Precio Venta</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="22.50" {...field} />
+                          <Input type="number" step="0.01" placeholder="22.50" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -337,45 +350,40 @@ export default function ProductsPage() {
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="imageId"
+                  name="image"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Imagen del Producto</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una imagen" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {PlaceHolderImages.map((image) => (
-                            <SelectItem key={image.id} value={image.id}>
-                              <div className="flex items-center gap-2">
-                                <Image 
-                                  src={image.imageUrl} 
-                                  alt={image.description} 
-                                  width={24} 
-                                  height={24} 
-                                  className="object-cover rounded-sm"
-                                  data-ai-hint={image.imageHint}
-                                  />
-                                <span>{image.description}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type="file"
+                            accept="image/png, image/jpeg"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            onChange={(e) => {
+                              field.onChange(e.target.files);
+                              handleImageChange(e);
+                            }}
+                          />
+                          <div className="border-2 border-dashed border-muted-foreground/50 rounded-md p-6 text-center cursor-pointer hover:border-primary">
+                            <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <p className="mt-2 text-sm text-muted-foreground">
+                              Arrastra y suelta o haz clic para subir
+                            </p>
+                          </div>
+                        </div>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                {form.watch('imageId') && (
+                {imagePreview && (
                   <div className="aspect-video rounded-md overflow-hidden border relative">
                     <Image
-                      src={PlaceHolderImages.find(img => img.id === form.watch('imageId'))?.imageUrl || ''}
-                      alt="Vista previa"
-                      layout="fill"
-                      objectFit="cover"
+                      src={imagePreview}
+                      alt="Vista previa de la imagen"
+                      fill
+                      className="object-cover"
                     />
                   </div>
                 )}
@@ -384,7 +392,9 @@ export default function ProductsPage() {
                 <DialogClose asChild>
                   <Button type="button" variant="secondary">Cancelar</Button>
                 </DialogClose>
-                <Button type="submit">Guardar Producto</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Guardando..." : "Guardar Producto"}
+                </Button>
               </DialogFooter>
             </form>
           </Form>
@@ -393,5 +403,3 @@ export default function ProductsPage() {
     </>
   );
 }
-
-    

@@ -20,7 +20,7 @@ type NewProductData = {
   actualizadoPor: string;
 };
 
-export async function addProduct(productData: NewProductData) {
+export async function addProduct(productData: Omit<NewProductData, 'image'>) {
   const { firestore } = initializeFirebase();
   try {
     const productsCollection = collection(firestore, 'productos');
@@ -34,5 +34,3 @@ export async function addProduct(productData: NewProductData) {
     throw new Error("No se pudo agregar el producto a la base de datos.");
   }
 }
-
-    

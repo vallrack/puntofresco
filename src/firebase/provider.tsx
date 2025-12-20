@@ -8,6 +8,7 @@ import {
 import type { FirebaseApp } from 'firebase/app';
 import type { Auth } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
+import type { FirebaseStorage } from 'firebase/storage';
 
 import { initializeFirebase } from './index';
 
@@ -22,6 +23,7 @@ type FirebaseContextValue = {
   app: FirebaseApp;
   auth: Auth;
   firestore: Firestore;
+  storage: FirebaseStorage;
 };
 
 const FirebaseContext = createContext<FirebaseContextValue | undefined>(
@@ -39,10 +41,10 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     firebaseInitialized = true;
   }
 
-  const { app, auth, firestore } = initializeFirebase();
+  const { app, auth, firestore, storage } = initializeFirebase();
 
   return (
-    <FirebaseContext.Provider value={{ app, auth, firestore }}>
+    <FirebaseContext.Provider value={{ app, auth, firestore, storage }}>
       {children}
     </FirebaseContext.Provider>
   );
@@ -94,4 +96,15 @@ export function useFirestore() {
   const { firestore } = useFirebase();
 
   return firestore;
+}
+
+/**
+ * @name useStorage
+ * @description A hook that returns the Firebase storage instance.
+ * @returns The Firebase storage instance.
+ */
+export function useStorage() {
+  const { storage } = useFirebase();
+
+  return storage;
 }

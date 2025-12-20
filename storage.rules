@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow public read access to all files
+    match /{allPaths=**} {
+      allow read;
+    }
+    
+    // Rules for product images
+    match /products/{userId}/{allPaths=**} {
+       // Allow writes only if the user is authenticated
+       // and the path matches their user ID.
+      allow write: if request.auth != null && request.auth.uid == userId
+                    && request.resource.size < 5 * 1024 * 1024 // Max 5MB
+                    && request.resource.contentType.matches('image/.*'); // Only images
+    }
+  }
+}

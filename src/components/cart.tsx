@@ -9,6 +9,8 @@ import { useUser, useFirestore } from "@/firebase"
 import { processSale } from "@/lib/sales"
 import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
+import type { Sale } from "@/lib/types"
+import ReceiptModal from "./receipt-modal"
 
 export default function Cart() {
   const { 
@@ -25,6 +27,7 @@ export default function Cart() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [completedSale, setCompletedSale] = useState<Sale | null>(null);
 
   const handlePayment = async () => {
     if (!user) {
@@ -37,22 +40,25 @@ export default function Cart() {
     }
 
     setIsProcessing(true);
+    const saleData: Sale = {
+      vendedorId: user.uid,
+      items: items.map(item => ({
+        productId: item.id,
+        nombre: item.nombre,
+        quantity: item.quantity,
+        precioVenta: item.precioVenta,
+      })),
+      total: total(),
+      fecha: new Date(),
+    };
+
     try {
-      await processSale(firestore, {
-        vendedorId: user.uid,
-        items: items.map(item => ({
-          productId: item.id,
-          nombre: item.nombre,
-          quantity: item.quantity,
-          precioVenta: item.precioVenta,
-        })),
-        total: total(),
-        fecha: new Date(),
-      });
+      const saleId = await processSale(firestore, saleData);
       toast({
         title: "Venta completada",
         description: "La venta se ha registrado correctamente.",
       });
+      setCompletedSale({ ...saleData, id: saleId });
       clearCart();
     } catch (error: any) {
       console.error("Error processing sale: ", error);
@@ -69,68 +75,86 @@ export default function Cart() {
 
   if (items.length === 0) {
     return (
-      <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle>Venta Actual</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center text-center py-16">
-          <ShoppingCart className="w-16 h-16 text-muted-foreground mb-4" />
-          <p className="font-semibold text-muted-foreground">El carrito está vacío</p>
-          <p className="text-sm text-muted-foreground">Agrega productos para iniciar una venta.</p>
-        </CardContent>
-      </Card>
+       <>
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle>Venta Actual</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center text-center py-16">
+            <ShoppingCart className="w-16 h-16 text-muted-foreground mb-4" />
+            <p className="font-semibold text-muted-foreground">El carrito está vacío</p>
+            <p className="text-sm text-muted-foreground">Agrega productos para iniciar una venta.</p>
+          </CardContent>
+        </Card>
+        {completedSale && (
+          <ReceiptModal
+            sale={completedSale}
+            isOpen={!!completedSale}
+            onClose={() => setCompletedSale(null)}
+          />
+        )}
+      </>
     )
   }
 
   return (
-    <Card className="shadow-md">
-      <CardHeader>
-        <CardTitle>Venta Actual</CardTitle>
-        <CardDescription>Revisa los productos antes de cobrar.</CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="max-h-[calc(100vh-450px)] min-h-[200px] overflow-y-auto px-6 divide-y divide-border">
-          {items.map(item => (
-            <div key={item.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
-              <Image src={item.imageUrl} alt={item.nombre} width={48} height={48} className="rounded-md object-cover aspect-square" data-ai-hint={item.imageHint} />
-              <div className="flex-1 space-y-1">
-                <p className="font-medium truncate text-sm">{item.nombre}</p>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)}><Minus className="h-3 w-3" /></Button>
-                  <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
-                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}><Plus className="h-3 w-3" /></Button>
+    <>
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle>Venta Actual</CardTitle>
+          <CardDescription>Revisa los productos antes de cobrar.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="max-h-[calc(100vh-450px)] min-h-[200px] overflow-y-auto px-6 divide-y divide-border">
+            {items.map(item => (
+              <div key={item.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
+                <Image src={item.imageUrl} alt={item.nombre} width={48} height={48} className="rounded-md object-cover aspect-square" data-ai-hint={item.imageHint} />
+                <div className="flex-1 space-y-1">
+                  <p className="font-medium truncate text-sm">{item.nombre}</p>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)}><Minus className="h-3 w-3" /></Button>
+                    <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}><Plus className="h-3 w-3" /></Button>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-sm">${(item.precioVenta * item.quantity).toFixed(2)}</p>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive mt-1 -mr-2" onClick={() => removeFromCart(item.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-bold text-sm">${(item.precioVenta * item.quantity).toFixed(2)}</p>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive mt-1 -mr-2" onClick={() => removeFromCart(item.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+            ))}
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col p-6 space-y-4 bg-card-foreground/5">
+          <div className="w-full space-y-2 text-sm">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Subtotal</span>
+              <span className="font-medium text-foreground">${subtotal().toFixed(2)}</span>
             </div>
-          ))}
-        </div>
-      </CardContent>
-      <CardFooter className="flex flex-col p-6 space-y-4 bg-card-foreground/5">
-        <div className="w-full space-y-2 text-sm">
-          <div className="flex justify-between text-muted-foreground">
-            <span>Subtotal</span>
-            <span className="font-medium text-foreground">${subtotal().toFixed(2)}</span>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Impuestos (7%)</span>
+              <span className="font-medium text-foreground">${taxes().toFixed(2)}</span>
+            </div>
+            <Separator className="my-2" />
+            <div className="flex justify-between font-bold text-lg">
+              <span>Total</span>
+              <span>${total().toFixed(2)}</span>
+            </div>
           </div>
-          <div className="flex justify-between text-muted-foreground">
-            <span>Impuestos (7%)</span>
-            <span className="font-medium text-foreground">${taxes().toFixed(2)}</span>
-          </div>
-          <Separator className="my-2" />
-          <div className="flex justify-between font-bold text-lg">
-            <span>Total</span>
-            <span>${total().toFixed(2)}</span>
-          </div>
-        </div>
-        <Button size="lg" className="w-full font-bold text-lg h-12" onClick={handlePayment} disabled={isProcessing}>
-           {isProcessing ? 'Procesando...' : 'Pagar'}
-        </Button>
-      </CardFooter>
-    </Card>
+          <Button size="lg" className="w-full font-bold text-lg h-12" onClick={handlePayment} disabled={isProcessing}>
+             {isProcessing ? 'Procesando...' : 'Pagar'}
+          </Button>
+        </CardFooter>
+      </Card>
+      {completedSale && (
+        <ReceiptModal
+          sale={completedSale}
+          isOpen={!!completedSale}
+          onClose={() => setCompletedSale(null)}
+        />
+      )}
+    </>
   )
 }

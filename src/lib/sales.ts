@@ -10,20 +10,23 @@ import {
 } from 'firebase/firestore';
 import type { Sale } from './types';
 
-export async function processSale(firestore: Firestore, saleData: Sale) {
+export async function processSale(firestore: Firestore, saleData: Sale): Promise<string> {
   if (!saleData.vendedorId) {
     throw new Error('ID de vendedor no válido.');
   }
   if (saleData.items.length === 0) {
     throw new Error('El carrito está vacío.');
   }
+  
+  const saleRef = doc(collection(firestore, 'ventas'));
 
   try {
     await runTransaction(firestore, async (transaction) => {
       // 1. Create a new sale document
-      const saleRef = doc(collection(firestore, 'ventas'));
       transaction.set(saleRef, {
-        ...saleData,
+        vendedorId: saleData.vendedorId,
+        items: saleData.items,
+        total: saleData.total,
         fecha: serverTimestamp(),
       });
 
@@ -45,6 +48,7 @@ export async function processSale(firestore: Firestore, saleData: Sale) {
         transaction.update(productRef, { stock: newStock });
       }
     });
+     return saleRef.id;
   } catch (error) {
     console.error('Error en la transacción de venta: ', error);
     // Re-throw the error to be caught by the calling function

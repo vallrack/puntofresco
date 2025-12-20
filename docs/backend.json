@@ -105,11 +105,28 @@
           "type": "string",
           "format": "date-time",
           "description": "Fecha y hora de la venta."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "productId": { "type": "string" },
+              "nombre": { "type": "string" },
+              "quantity": { "type": "number" },
+              "precioVenta": { "type": "number" }
+            }
+          }
+        },
+        "total": {
+          "type": "number"
         }
       },
       "required": [
         "vendedorId",
-        "fecha"
+        "fecha",
+        "items",
+        "total"
       ]
     },
     "compra": {

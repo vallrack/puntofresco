@@ -20,8 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { initializeFirebase } from '@/firebase';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('vallrack67@gmail.com');
-  const [password, setPassword] = useState('Agnusde9');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
   const { toast } = useToast();

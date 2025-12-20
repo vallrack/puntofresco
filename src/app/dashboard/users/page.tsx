@@ -120,19 +120,18 @@ export default function UsersPage() {
       forceUpdate();
       setIsNewUserDialogOpen(false);
     } catch (error: any) {
+        let description = 'Ocurrió un error inesperado al crear el usuario.';
         if (error.code === 'auth/email-already-in-use') {
-            toast({
-                variant: 'destructive',
-                title: 'Email en uso',
-                description: 'Este email ya está registrado. No se pudo crear el usuario.',
-            });
-        } else {
-             toast({
-                variant: 'destructive',
-                title: 'Error al crear usuario',
-                description: error.message,
-            });
+            description = 'Este email ya está registrado. No se pudo crear el usuario.';
+        } else if (error.code === 'auth/weak-password') {
+            description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
         }
+        
+        toast({
+            variant: 'destructive',
+            title: 'Error al crear usuario',
+            description: description,
+        });
     }
   };
 

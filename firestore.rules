@@ -31,47 +31,62 @@ service cloud.firestore {
     // --- REGLAS POR COLECCIÓN ---
 
     match /usuarios/{userId} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isSuperAdmin());
-      allow create: if isSuperAdmin();
-      allow update, delete: if isSuperAdmin();
+      // Un super_admin puede leer, crear, actualizar y eliminar cualquier usuario.
+      // Un usuario normal solo puede leer su propio perfil.
+      allow read: if isSuperAdmin() || (isAuthenticated() && isOwner(userId));
+      allow write: if isSuperAdmin();
     }
 
     match /productos/{productoId} {
+      // super_admin tiene control total.
+      // Otros usuarios autenticados pueden leer.
+      // Admins y vendedores pueden actualizar (para ventas).
+      // Solo Admins (y super_admin) pueden crear y eliminar.
       allow read: if isAuthenticated();
-      allow create: if isAdmin();
+      allow create, delete: if isAdmin();
       allow update: if isAdmin() || isVendedor();
-      allow delete: if isAdmin();
     }
 
     match /ventas/{ventaId} {
-      allow get: if isAdmin() || (isVendedor() && resource.data.vendedorId == request.auth.uid);
-      allow list: if isAdmin() || (isVendedor() && request.query.where[0][2] == request.auth.uid);
+      // super_admin tiene control total.
+      // Admins pueden listar y obtener cualquier venta.
+      // Vendedores solo pueden crear ventas a su nombre y ver las suyas.
+      allow get: if isSuperAdmin() || isAdmin() || (isVendedor() && resource.data.vendedorId == request.auth.uid);
+      allow list: if isSuperAdmin() || isAdmin() || (isVendedor() && request.query.where[0][2] == request.auth.uid);
       allow create: if isAuthenticated() && request.resource.data.vendedorId == request.auth.uid;
-      allow update, delete: if isAdmin();
+      allow update, delete: if isSuperAdmin() || isAdmin();
     }
 
     match /compras/{compraId} {
-      allow read, write: if isAdmin();
+      // Solo super_admin y admins pueden gestionar compras.
+      allow read, write: if isSuperAdmin() || isAdmin();
     }
 
     match /reportes_financieros/{reporteId} {
-      allow read, write: if isAdmin();
+       // Solo super_admin y admins pueden gestionar reportes.
+      allow read, write: if isSuperAdmin() || isAdmin();
     }
     
     match /categorias/{categoriaId} {
+      // super_admin tiene control total.
+      // Otros usuarios pueden leer. Admins pueden escribir.
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin() || isAdmin();
     }
 
     match /proveedores/{proveedorId} {
+      // super_admin tiene control total.
+      // Otros usuarios pueden leer. Admins pueden escribir.
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin() || isAdmin();
     }
 
     match /mermas/{mermaId} {
-      allow read: if isAdmin();
-      allow create: if isAdmin();
-      allow update, delete: if false; // No se permite actualizar ni eliminar mermas
+      // super_admin tiene control total.
+      // Admins pueden leer y registrar mermas.
+      allow read: if isSuperAdmin() || isAdmin();
+      allow create: if isSuperAdmin() || isAdmin();
+      allow update, delete: if false; // No se permite modificar ni borrar para mantener la integridad.
     }
   }
 }

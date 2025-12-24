@@ -33,6 +33,7 @@ import { getAuth, signOut } from "firebase/auth"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "./ui/button"
+import { SheetHeader, SheetTitle } from "./ui/sheet"
 
 export default function DashboardSidebar() {
   const pathname = usePathname()
@@ -85,6 +86,9 @@ export default function DashboardSidebar() {
 
   return (
     <Sidebar>
+       <SheetHeader className="md:hidden">
+        <SheetTitle className="sr-only">Menú Principal</SheetTitle>
+      </SheetHeader>
       <SidebarHeader>
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

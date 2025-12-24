@@ -86,9 +86,6 @@ export default function DashboardSidebar() {
 
   return (
     <Sidebar>
-       <SheetHeader className="md:hidden">
-        <SheetTitle className="sr-only">Menú Principal</SheetTitle>
-      </SheetHeader>
       <SidebarHeader>
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

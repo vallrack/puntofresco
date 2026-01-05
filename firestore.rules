@@ -35,6 +35,7 @@ service cloud.firestore {
 
     match /usuarios/{userId} {
       allow read: if isAuthenticated();
+      // Un usuario nuevo puede crear su perfil sin rol. Un super admin puede crearlo con cualquier dato.
       allow create: if (isAuthenticated() && isOwner(userId) && !('rol' in request.resource.data)) || isSuperAdmin();
       allow update: if isSuperAdmin() || (isAuthenticated() && isOwner(userId) && request.resource.data.rol == resource.data.rol);
       allow delete: if isSuperAdmin();
@@ -47,13 +48,8 @@ service cloud.firestore {
     }
 
     match /ventas/{ventaId} {
-      // CAMBIO CLAVE: Usamos 'read' con validación de resource.data.
-      // Esto permite que el vendedor liste sus ventas de forma estable sin que Firebase corte la conexión.
       allow read: if isAdmin() || (isAuthenticated() && (resource == null || resource.data.vendedorId == request.auth.uid));
-      
-      // Aseguramos que el vendedor solo cree ventas con su propio ID
       allow create: if isAuthenticated() && request.resource.data.vendedorId == request.auth.uid;
-      
       allow update, delete: if isAdmin();
     }
 
@@ -76,10 +72,10 @@ service cloud.firestore {
     }
 
     match /mermas/{mermaId} {
-      // Aplicamos la misma lógica de 'read' para estabilidad
       allow read: if isAdmin() || (isAuthenticated() && (resource == null || resource.data.registradoPor == request.auth.uid));
       allow create: if isAuthenticated();
-      allow update, delete: if isSuperAdmin();
+      allow update: if false; // Nadie puede actualizar una merma
+      allow delete: if isSuperAdmin(); // Solo el Super Admin puede borrar el registro
     }
   }
 }

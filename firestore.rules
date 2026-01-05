@@ -11,14 +11,13 @@ service cloud.firestore {
       // getAfter garantiza que leemos la versión más reciente del perfil
       return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
     }
-
+    
+    // Un Super Admin es alguien con el rol explícito o el email original.
     function isSuperAdmin() {
-      return isAuthenticated() && (
-        getUserData().rol == 'super_admin' || 
-        request.auth.token.email == 'vallrack67@gmail.com'
-      );
+      return isAuthenticated() && (getUserData().rol == 'super_admin' || request.auth.token.email == 'vallrack67@gmail.com');
     }
 
+    // Un Admin es alguien con el rol 'admin' O un Super Admin.
     function isAdmin() {
       return isAuthenticated() && (getUserData().rol == 'admin' || isSuperAdmin());
     }

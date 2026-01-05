@@ -86,6 +86,9 @@ export default function DashboardSidebar() {
 
   return (
     <Sidebar>
+      <SheetHeader>
+        <SheetTitle className="sr-only">Menú Principal</SheetTitle>
+      </SheetHeader>
       <SidebarHeader>
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -149,7 +152,7 @@ export default function DashboardSidebar() {
               </SidebarMenuItem>
             </>
           )}
-          {isSuperAdmin && (
+          {isAdmin && (
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Usuarios" isActive={isActive('/dashboard/users')}>
                 <Link href="/dashboard/users"><Users /><span>Usuarios</span></Link>

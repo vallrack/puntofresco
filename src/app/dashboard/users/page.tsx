@@ -23,6 +23,7 @@ import {
   Search,
   Edit,
   Trash2,
+  CheckCircle,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -122,7 +123,6 @@ export default function UsersPage() {
   
  const onNewUserSubmit = async (values: UserFormValues) => {
     try {
-      // Si el que crea es un admin, forzamos el rol a vendedor
       if (!isSuperAdmin) {
         values.rol = 'vendedor';
       }
@@ -146,16 +146,16 @@ export default function UsersPage() {
     try {
       const userRef = doc(firestore, 'usuarios', selectedUser.id);
       await updateDoc(userRef, { rol: values.rol });
-      toast({ title: 'Éxito', description: 'Rol de usuario actualizado.' });
+      toast({ title: 'Éxito', description: 'Usuario actualizado correctamente.' });
       forceUpdate();
       setIsEditUserDialogOpen(false);
     } catch (error: any) {
-       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo actualizar el rol.' });
+       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo actualizar el usuario.' });
     }
   };
 
   const handleDeleteUser = async () => {
-    if (!selectedUser || !firestore) return;
+    if (!selectedUser || !firestore || !isSuperAdmin) return;
     try {
         const userRef = doc(firestore, 'usuarios', selectedUser.id);
         await deleteDoc(userRef);
@@ -218,7 +218,7 @@ export default function UsersPage() {
             <div>
               <CardTitle>Usuarios</CardTitle>
               <CardDescription>
-                Gestión de usuarios y roles del sistema.
+                Gestión de usuarios, roles y aprobaciones del sistema.
               </CardDescription>
             </div>
             {isAdmin && (
@@ -275,27 +275,37 @@ export default function UsersPage() {
                           <Badge 
                               variant={!user.rol ? 'destructive' : user.rol === 'super_admin' ? 'default' : user.rol === 'admin' ? 'secondary' : 'outline'}
                           >
-                              {user.rol || 'Sin Asignar'}
+                              {user.rol ? user.rol.replace('_', ' ') : 'Pendiente Aprobación'}
                           </Badge>
                       </TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">
                            <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0" disabled={user.id === currentUser?.uid || (!isSuperAdmin && user.rol !== 'vendedor')}>
+                              <Button variant="ghost" className="h-8 w-8 p-0" disabled={user.id === currentUser?.uid}>
                                 <span className="sr-only">Abrir menú</span>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openEditDialog(user)} disabled={!isSuperAdmin && user.rol !== 'vendedor'}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Editar Rol
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(user)} disabled={!isSuperAdmin}>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Eliminar
-                              </DropdownMenuItem>
+                              {!user.rol && isSuperAdmin && (
+                                <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                  <CheckCircle className="mr-2 h-4 w-4" />
+                                  Aprobar Usuario
+                                </DropdownMenuItem>
+                              )}
+                              {user.rol && isSuperAdmin && (
+                                 <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Editar Rol
+                                </DropdownMenuItem>
+                              )}
+                              {isSuperAdmin && (
+                                <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(user)}>
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Eliminar
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -407,13 +417,14 @@ export default function UsersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit User Dialog */}
+      {/* Edit/Approve User Dialog */}
       <Dialog open={isEditUserDialogOpen} onOpenChange={setIsEditUserDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Editar Rol de Usuario</DialogTitle>
+            <DialogTitle>{selectedUser?.rol ? 'Editar Rol' : 'Aprobar Usuario'}</DialogTitle>
             <DialogDescription>
-              Cambia el rol para <span className="font-semibold">{selectedUser?.email}</span>.
+              {selectedUser?.rol ? 'Cambia el rol para ' : 'Asigna un rol inicial para '}
+              <span className="font-semibold">{selectedUser?.email}</span>.
             </DialogDescription>
           </DialogHeader>
           <Form {...editUserForm}>
@@ -432,12 +443,8 @@ export default function UsersPage() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="vendedor">Vendedor</SelectItem>
-                          {isSuperAdmin && (
-                            <>
-                                <SelectItem value="admin">Administrador</SelectItem>
-                                <SelectItem value="super_admin">Super Admin</SelectItem>
-                            </>
-                          )}
+                          <SelectItem value="admin">Administrador</SelectItem>
+                          <SelectItem value="super_admin">Super Admin</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

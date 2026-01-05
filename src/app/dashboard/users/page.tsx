@@ -109,6 +109,7 @@ export default function UsersPage() {
     resolver: zodResolver(editUserSchema),
   });
   
+  const isAdmin = useMemo(() => currentUserData?.rol === 'admin' || currentUserData?.rol === 'super_admin', [currentUserData]);
   const isSuperAdmin = useMemo(() => currentUserData?.rol === 'super_admin', [currentUserData]);
 
   const filteredUsers = useMemo(() => {
@@ -121,6 +122,10 @@ export default function UsersPage() {
   
  const onNewUserSubmit = async (values: UserFormValues) => {
     try {
+      // Si el que crea es un admin, forzamos el rol a vendedor
+      if (!isSuperAdmin) {
+        values.rol = 'vendedor';
+      }
       await createUser(values);
       toast({ title: 'Éxito', description: 'Usuario creado correctamente.' });
       forceUpdate();
@@ -151,8 +156,6 @@ export default function UsersPage() {
 
   const handleDeleteUser = async () => {
     if (!selectedUser || !firestore) return;
-    // Nota: Esta función solo elimina de Firestore. Para una eliminación completa,
-    // se necesitaría una Cloud Function para eliminar el usuario de Firebase Auth.
     try {
         const userRef = doc(firestore, 'usuarios', selectedUser.id);
         await deleteDoc(userRef);
@@ -193,7 +196,7 @@ export default function UsersPage() {
     return <p>Cargando...</p>;
   }
 
-  if (!isSuperAdmin) {
+  if (!isAdmin) {
     return (
        <Card>
         <CardHeader>
@@ -201,7 +204,7 @@ export default function UsersPage() {
             <CardDescription>No tienes permisos para gestionar usuarios.</CardDescription>
         </CardHeader>
         <CardContent>
-            <p>Esta sección solo está disponible para usuarios con el rol de Super Administrador.</p>
+            <p>Esta sección solo está disponible para usuarios administradores.</p>
         </CardContent>
        </Card>
     );
@@ -218,7 +221,7 @@ export default function UsersPage() {
                 Gestión de usuarios y roles del sistema.
               </CardDescription>
             </div>
-            {isSuperAdmin && (
+            {isAdmin && (
               <Button onClick={() => setIsNewUserDialogOpen(true)} className="w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Nuevo Usuario
@@ -244,7 +247,7 @@ export default function UsersPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Teléfono</TableHead>
                   <TableHead>Rol</TableHead>
-                  {isSuperAdmin && <TableHead className="text-right">Acciones</TableHead>}
+                  {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -275,21 +278,21 @@ export default function UsersPage() {
                               {user.rol || 'Sin Asignar'}
                           </Badge>
                       </TableCell>
-                      {isSuperAdmin && (
+                      {isAdmin && (
                         <TableCell className="text-right">
                            <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0" disabled={user.id === currentUser?.uid}>
+                              <Button variant="ghost" className="h-8 w-8 p-0" disabled={user.id === currentUser?.uid || (!isSuperAdmin && user.rol !== 'vendedor')}>
                                 <span className="sr-only">Abrir menú</span>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                              <DropdownMenuItem onClick={() => openEditDialog(user)} disabled={!isSuperAdmin && user.rol !== 'vendedor'}>
                                 <Edit className="mr-2 h-4 w-4" />
                                 Editar Rol
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(user)}>
+                              <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(user)} disabled={!isSuperAdmin}>
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Eliminar
                               </DropdownMenuItem>
@@ -374,7 +377,7 @@ export default function UsersPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Rol Inicial</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isSuperAdmin}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecciona un rol" />
@@ -382,7 +385,7 @@ export default function UsersPage() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="vendedor">Vendedor</SelectItem>
-                          <SelectItem value="admin">Administrador</SelectItem>
+                          {isSuperAdmin && <SelectItem value="admin">Administrador</SelectItem>}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -421,7 +424,7 @@ export default function UsersPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Rol</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isSuperAdmin}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecciona un rol" />
@@ -429,8 +432,12 @@ export default function UsersPage() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="vendedor">Vendedor</SelectItem>
-                          <SelectItem value="admin">Administrador</SelectItem>
-                          <SelectItem value="super_admin">Super Admin</SelectItem>
+                          {isSuperAdmin && (
+                            <>
+                                <SelectItem value="admin">Administrador</SelectItem>
+                                <SelectItem value="super_admin">Super Admin</SelectItem>
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -463,7 +470,7 @@ export default function UsersPage() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setIsDeleteUserDialogOpen(false)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleDeleteUser}>Sí, eliminar</Button>
+            <Button variant="destructive" onClick={handleDeleteUser} disabled={!isSuperAdmin}>Sí, eliminar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

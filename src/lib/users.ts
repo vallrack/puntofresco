@@ -25,14 +25,14 @@ export async function createUser(userData: NewUserData): Promise<any> {
     const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
     const user = userCredential.user;
 
-    // 2. Crear el documento del usuario en Firestore. Esto SOLO lo puede hacer un super_admin
-    // gracias a las nuevas reglas de seguridad.
+    // 2. Crear el documento del usuario en Firestore. 
+    // Las reglas de seguridad se encargarán de validar si el rol es permitido.
     const userDocRef = doc(firestore, 'usuarios', user.uid);
     await setDoc(userDocRef, {
       nombre: userData.nombre,
       email: userData.email,
       telefono: userData.telefono || '',
-      rol: userData.rol, // El rol es asignado directamente por el super_admin
+      rol: userData.rol, // El rol es asignado directamente
     });
 
     return user; // Devuelve el objeto de usuario si todo fue exitoso

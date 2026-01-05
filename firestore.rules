@@ -7,23 +7,25 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getUserData() {
-      // getAfter garantiza que leemos la versión más reciente del perfil
-      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/usuarios/$(userId)).data;
     }
     
-    // Un Super Admin es alguien con el rol explícito o el email original.
-    function isSuperAdmin() {
-      return isAuthenticated() && (getUserData().rol == 'super_admin' || request.auth.token.email == 'vallrack67@gmail.com');
+    // Función para verificar el rol del usuario que realiza la petición
+    function getRequestingUserRole() {
+        return getUserData(request.auth.uid).rol;
     }
 
-    // Un Admin es alguien con el rol 'admin' O un Super Admin.
+    function isSuperAdmin() {
+      return isAuthenticated() && (getRequestingUserRole() == 'super_admin' || request.auth.token.email == 'vallrack67@gmail.com');
+    }
+
     function isAdmin() {
-      return isAuthenticated() && (getUserData().rol == 'admin' || isSuperAdmin());
+      return isAuthenticated() && (getRequestingUserRole() == 'admin' || isSuperAdmin());
     }
     
     function isVendedor() {
-      return isAuthenticated() && getUserData().rol == 'vendedor';
+      return isAuthenticated() && getRequestingUserRole() == 'vendedor';
     }
     
     function isOwner(userId) {
@@ -34,12 +36,13 @@ service cloud.firestore {
 
     match /usuarios/{userId} {
       allow read: if isAuthenticated();
-      // Un usuario nuevo se puede registrar sin rol.
-      // Un super_admin puede crear usuarios con cualquier rol.
-      // Un admin solo puede crear usuarios si su rol es 'vendedor'.
+      // Un usuario nuevo se puede registrar (crear su propio doc) si no se asigna un rol.
+      // Un admin puede crear un usuario si el rol es 'vendedor'.
+      // Un super_admin puede crear cualquier usuario.
       allow create: if (isAuthenticated() && isOwner(userId) && !('rol' in request.resource.data))
-                    || (isSuperAdmin())
-                    || (isAdmin() && request.resource.data.rol == 'vendedor');
+                    || (isAdmin() && request.resource.data.rol == 'vendedor')
+                    || (isSuperAdmin());
+      
       allow update: if isSuperAdmin() || (isAuthenticated() && isOwner(userId) && request.resource.data.rol == resource.data.rol);
       allow delete: if isSuperAdmin();
     }

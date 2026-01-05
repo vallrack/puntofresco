@@ -7,24 +7,24 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getUserData() {
-      // getAfter garantiza que leemos la versión más reciente del perfil
-      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/usuarios/$(userId)).data;
+    }
+    
+    function getRequestingUserRole() {
+        return getUserData(request.auth.uid).rol;
     }
 
     function isSuperAdmin() {
-      return isAuthenticated() && (
-        getUserData().rol == 'super_admin' || 
-        request.auth.token.email == 'vallrack67@gmail.com'
-      );
+      return isAuthenticated() && getRequestingUserRole() == 'super_admin';
     }
 
     function isAdmin() {
-      return isAuthenticated() && (getUserData().rol == 'admin' || isSuperAdmin());
+      return isAuthenticated() && (getRequestingUserRole() == 'admin' || isSuperAdmin());
     }
     
     function isVendedor() {
-      return isAuthenticated() && getUserData().rol == 'vendedor';
+      return isAuthenticated() && getRequestingUserRole() == 'vendedor';
     }
     
     function isOwner(userId) {
@@ -35,13 +35,16 @@ service cloud.firestore {
 
     match /usuarios/{userId} {
       allow read: if isAuthenticated();
-      // Un usuario nuevo se puede registrar sin rol.
-      // Un super_admin puede crear usuarios con cualquier rol.
-      // Un admin solo puede crear usuarios si su rol es 'vendedor'.
-      allow create: if (isAuthenticated() && isOwner(userId) && !('rol' in request.resource.data))
-                    || (isSuperAdmin())
-                    || (isAdmin() && request.resource.data.rol == 'vendedor');
-      allow update: if isSuperAdmin() || (isAuthenticated() && isOwner(userId) && request.resource.data.rol == resource.data.rol);
+      // Un usuario nuevo se puede registrar (crear su propio doc) si no se asigna un rol.
+      // Un admin puede crear un usuario si el rol es 'vendedor'.
+      // Un super_admin puede crear cualquier usuario.
+      allow create: if (isOwner(userId) && !('rol' in request.resource.data))
+                    || (isAdmin() && request.resource.data.rol == 'vendedor')
+                    || (isSuperAdmin());
+      
+      // Solo el super_admin puede cambiar el rol de un usuario.
+      // Un usuario puede actualizar su propio perfil, pero no su rol.
+      allow update: if isSuperAdmin() || (isOwner(userId) && request.resource.data.rol == resource.data.rol);
       allow delete: if isSuperAdmin();
     }
 
@@ -52,8 +55,8 @@ service cloud.firestore {
     }
 
     match /ventas/{ventaId} {
-      allow read: if isAdmin() || (isAuthenticated() && (resource == null || resource.data.vendedorId == request.auth.uid));
-      allow create: if isAuthenticated() && request.resource.data.vendedorId == request.auth.uid;
+      allow read: if isAdmin() || (isOwner(resource.data.vendedorId));
+      allow create: if isOwner(request.resource.data.vendedorId);
       allow update, delete: if isAdmin();
     }
 
@@ -76,7 +79,7 @@ service cloud.firestore {
     }
 
     match /mermas/{mermaId} {
-      allow read: if isAdmin() || (isAuthenticated() && (resource == null || resource.data.registradoPor == request.auth.uid));
+      allow read: if isAdmin() || (isOwner(resource.data.registradoPor));
       allow create: if isAuthenticated();
       allow update: if false; // Nadie puede actualizar una merma
       allow delete: if isSuperAdmin(); // Solo el Super Admin puede borrar el registro

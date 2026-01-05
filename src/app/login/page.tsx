@@ -36,31 +36,30 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check if user document exists in Firestore
       const userDocRef = doc(firestore, 'usuarios', user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
-      if (!userDocSnap.exists()) {
-        // If the user doc doesn't exist, they are not authorized.
-        // The exception is the initial super_admin.
-        if (email === 'vallrack67@gmail.com') {
-           // This should only happen once for the very first login
-           await setDoc(userDocRef, { rol: 'super_admin', email: user.email, nombre: 'Super Admin' });
-        } else {
-          // This path is for registered users waiting for a role
-          // We can let them in, but the app should handle the "no role" state gracefully
-          // For now, we assume they need a role assigned by an admin.
-           await auth.signOut(); // Sign them out as they are not yet approved
-           throw new Error('Tu cuenta está pendiente de aprobación por un administrador.');
-        }
-      } else {
-        // If the doc exists, check if the super_admin needs a name field.
-        const userData = userDocSnap.data();
-        if (email === 'vallrack67@gmail.com' && !userData.nombre) {
-             await setDoc(userDocRef, { nombre: 'Super Admin' }, { merge: true });
-        }
+      const userData = userDocSnap.data();
+
+      // Caso especial para el primer super_admin
+      if (email === 'vallrack67@gmail.com' && !userDocSnap.exists()) {
+        await setDoc(userDocRef, { 
+            rol: 'super_admin', 
+            email: user.email, 
+            nombre: 'Super Admin' 
+        });
+      } else if (!userData || !userData.rol) {
+        // Si el documento del usuario no existe o no tiene un rol asignado,
+        // no tiene permisos para entrar.
+        await auth.signOut();
+        throw new Error('Tu cuenta está pendiente de aprobación por un administrador.');
       }
       
+      // Si el usuario es el super_admin y no tiene nombre, se lo asignamos
+      if (email === 'vallrack67@gmail.com' && userData && !userData.nombre) {
+         await setDoc(userDocRef, { nombre: 'Super Admin' }, { merge: true });
+      }
+
       toast({
         title: 'Inicio de sesión exitoso',
         description: 'Bienvenido de nuevo.',

@@ -3,7 +3,6 @@ import { createUserWithEmailAndPassword, getAuth, signOut } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { initializeApp } from 'firebase/app';
-import { firebaseConfig } from '@/firebase/config';
 
 type NewUserData = {
   nombre: string;
@@ -15,23 +14,31 @@ type NewUserData = {
 
 // Crear un nuevo usuario en Auth y Firestore
 export async function createUser(userData: NewUserData): Promise<any> {
-  const { firestore } = initializeFirebase(); // Instancia principal para Firestore
+  const { firestore, app } = initializeFirebase();
 
   if (!userData.password) {
     throw new Error('La contraseña es obligatoria para crear un nuevo usuario.');
   }
+  
+  // Obtener la configuración de Firebase desde la app principal
+  const firebaseConfig = app.options;
 
-  // 1. Crear una instancia de app secundaria para no afectar la sesión del admin
-  const secondaryApp = initializeApp(firebaseConfig, `secondary-auth-${Date.now()}`);
-  const secondaryAuth = getAuth(secondaryApp);
+  // Crear una instancia secundaria de Firebase SOLO para crear el usuario
+  let secondaryApp;
+  let secondaryAuth;
+
 
   try {
-    // 2. Crear el usuario en Firebase Auth usando la instancia secundaria
+    // Usamos un nombre único para la app secundaria para evitar conflictos
+    const appName = `secondary-auth-${Date.now()}`;
+    secondaryApp = initializeApp(firebaseConfig, appName);
+    secondaryAuth = getAuth(secondaryApp);
+
+    // 1. Crear el usuario en Firebase Auth usando la instancia secundaria
     const userCredential = await createUserWithEmailAndPassword(secondaryAuth, userData.email, userData.password);
     const user = userCredential.user;
 
-    // 3. Crear el documento del usuario en Firestore usando la instancia principal
-    // El admin sigue logueado en la instancia principal, por lo que tiene permisos
+    // 2. Crear el documento del usuario en Firestore usando la instancia principal
     const userDocRef = doc(firestore, 'usuarios', user.uid);
     await setDoc(userDocRef, {
       nombre: userData.nombre,
@@ -56,7 +63,9 @@ export async function createUser(userData: NewUserData): Promise<any> {
     // Propaga un error con un mensaje amigable
     throw new Error(friendlyMessage);
   } finally {
-      // 4. Asegurarse de cerrar la sesión en la instancia secundaria
-      await signOut(secondaryAuth);
+      // 4. Asegurarse de cerrar la sesión en la instancia secundaria si existe
+      if (secondaryAuth) {
+         await signOut(secondaryAuth);
+      }
   }
 }

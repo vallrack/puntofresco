@@ -5,24 +5,6 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 import { firebaseConfig } from './config';
 
-// Provides a singleton pattern for firebase services.
-const getFirebase = () => {
-  const apps = getApps();
-  if (apps.length > 0) {
-    const app = getApp();
-    const auth = getAuth(app);
-    const firestore = getFirestore(app);
-    const storage = getStorage(app);
-    return { app, auth, firestore, storage };
-  } else {
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const firestore = getFirestore(app);
-    const storage = getStorage(app);
-    return { app, auth, firestore, storage };
-  }
-};
-
 let app: FirebaseApp;
 let auth: Auth;
 let firestore: Firestore;
